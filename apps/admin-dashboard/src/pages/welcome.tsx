@@ -318,8 +318,8 @@ const WelcomePage = () => {
             key={i}
             className="absolute w-2 h-2 bg-blue-400/30 rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${(i * 5) % 100}%`,
+              top: `${(i * 7) % 100}%`,
             }}
             animate={{
               y: [0, -30, 0],
@@ -327,9 +327,9 @@ const WelcomePage = () => {
               scale: [1, 1.2, 1],
             }}
             transition={{
-              duration: 3 + Math.random() * 2,
+              duration: 3 + (i % 3),
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: i * 0.1,
             }}
           />
         ))}
@@ -1355,7 +1355,7 @@ const WelcomePage = () => {
             {...fadeInUp}
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              200+ Integrations & Growing
+              25+ Integrations & Growing
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Connect seamlessly with the tools your team already uses. No more data silos.
@@ -1391,22 +1391,6 @@ const WelcomePage = () => {
             ))}
           </motion.div>
 
-          <motion.div
-            className="text-center mt-12"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <Link href="/login">
-              <motion.button
-                className="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                View All Integrations
-              </motion.button>
-            </Link>
-          </motion.div>
         </div>
       </section>
 
