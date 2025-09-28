@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const navigationItems = [
   {
@@ -63,7 +64,7 @@ const navigationItems = [
 
 export default function ModernNavbar() {
   const { user, logout } = useAuth();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -301,7 +302,7 @@ export default function ModernNavbar() {
 
             {/* Theme Toggle */}
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
+              onClick={toggleTheme}
               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors duration-200"
               title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
             >

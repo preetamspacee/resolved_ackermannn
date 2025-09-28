@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { AuthProvider, useAuth } from '../contexts/AuthContext'
+import { ThemeProvider } from '../contexts/ThemeContext'
 
 function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter()
@@ -28,7 +29,7 @@ function AppContent({ Component, pageProps }: AppProps) {
 
   if (!isClient || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
@@ -39,8 +40,10 @@ function AppContent({ Component, pageProps }: AppProps) {
 
 export default function App(props: AppProps) {
   return (
-    <AuthProvider>
-      <AppContent {...props} />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent {...props} />
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
