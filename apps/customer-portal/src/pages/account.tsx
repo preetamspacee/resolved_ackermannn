@@ -175,7 +175,7 @@ const mockDevices = [
 const mockSubscriptions = [
   {
     id: 'SUB-001',
-    name: 'BSM Professional',
+    name: 'ACKERMANN Professional',
     description: 'Full access to all BSM features and support',
     status: 'Active',
     startDate: '2023-01-15',

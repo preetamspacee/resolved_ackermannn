@@ -267,8 +267,8 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>BSM Pro - Login</title>
-        <meta name="description" content="Login to BSM Pro platform" />
+        <title>ACKERMANN - Login</title>
+        <meta name="description" content="Login to ACKERMANN platform" />
       </Head>
       <Script
         src="https://accounts.google.com/gsi/client"

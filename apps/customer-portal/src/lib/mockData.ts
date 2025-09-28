@@ -235,7 +235,7 @@ export const mockTickets: Ticket[] = [
 export const mockKnowledgeBase: KnowledgeBase[] = [
   {
     id: '1',
-    title: 'Welcome to BSM Pro',
+    title: 'Welcome to ACKERMANN',
     content: 'Welcome to our comprehensive Business Service Management platform. This guide will help you get started with managing your business services, assets, and workflows effectively.',
     category: 'Getting Started',
     tags: ['welcome', 'getting-started', 'overview'],
