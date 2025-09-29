@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Ticket, 
   Plus, 
@@ -24,9 +24,11 @@ import {
   Copy,
   UserPlus,
   TrendingUp,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react';
 import HumanApprovalChamber from '../components/HumanApprovalChamber';
+import { ticketService } from '../lib/supabaseService';
 
 interface Ticket {
   id: string;
@@ -50,8 +52,121 @@ interface Ticket {
   ruleUsed?: string;
 }
 
-const ticketData: Ticket[] = [
-  // Pending tickets for human approval
+// Dynamic ticket loading from Supabase
+export default function TicketsPage() {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [showApprovalChamber, setShowApprovalChamber] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [pendingTickets, setPendingTickets] = useState<Ticket[]>([]);
+  const [showTicketDetails, setShowTicketDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  // Keep pending tickets in sync with current tickets
+  useEffect(() => {
+    const pending = tickets.filter(ticket =>
+      ticket.status === 'Pending' && ticket.approvalMethod === 'human'
+    );
+    setPendingTickets(pending);
+  }, [tickets]);
+
+  // Load tickets from Supabase
+  const loadTickets = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Loading tickets from Supabase...');
+      const data = await ticketService.getTickets();
+      console.log('✅ Loaded tickets:', data);
+      
+      // Transform Supabase data to match our interface
+      const transformedTickets: Ticket[] = data.map((ticket: any) => ({
+        id: ticket.id,
+        subject: ticket.title || ticket.subject,
+        description: ticket.description,
+        priority: ticket.priority,
+        status: ticket.status,
+        category: ticket.category,
+        channel: 'Web Portal',
+        assignee: ticket.assigned_user?.name || '',
+        requester: ticket.created_user?.name || 'Customer',
+        created: new Date(ticket.created_at).toLocaleString(),
+        updated: new Date(ticket.updated_at).toLocaleString(),
+        sla: '24 hours',
+        tags: ticket.tags || [],
+        aiInsights: 'Auto-generated from customer request',
+        sentiment: 'Neutral',
+        approvalMethod: 'auto',
+        approvedBy: '',
+        approvedAt: null
+      }));
+      
+      setTickets(transformedTickets);
+      setError(null);
+    } catch (err) {
+      console.error('❌ Error loading tickets:', err);
+      setError('Failed to load tickets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+    
+    // Refresh tickets every 30 seconds for real-time updates
+    const interval = setInterval(loadTickets, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Filter tickets
+  const filteredTickets = tickets.filter(ticket => {
+    const matchesSearch = searchQuery === '' || 
+      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || ticket.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesPriority = priorityFilter === 'all' || ticket.priority.toLowerCase() === priorityFilter.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading tickets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={loadTickets}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mock data for demonstration (fallback)
+  const mockTicketData: Ticket[] = [
   {
     id: 'TCK-2024-P001',
     subject: 'Emergency server access request for production database',
@@ -259,65 +374,27 @@ const statusColors: { [key: string]: string } = {
   Closed: 'bg-gray-100 text-gray-800',
   Escalated: 'bg-red-100 text-red-800'
 };
-
-export default function TicketsPage() {
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterApproval, setFilterApproval] = useState('All');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
-  const [insights, setInsights] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [pendingTickets, setPendingTickets] = useState<Ticket[]>([]);
-  const [showTicketDetails, setShowTicketDetails] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [ticketToDelete, setTicketToDelete] = useState<Ticket | null>(null);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   
-  // Filter pending tickets
-  React.useEffect(() => {
-    const pending = ticketData.filter(ticket => 
-      ticket.status === 'Pending' && ticket.approvalMethod === 'human'
-    );
-    setPendingTickets(pending);
-  }, []);
 
   // Handlers for Human Approval Chamber
-  const handleApproveTicket = (ticketId: string) => {
+  const handleApproveTicket = async (ticketId: string) => {
     console.log(`Approving ticket: ${ticketId}`);
-    // In a real app, you'd call an API to update the ticket status
-    alert(`Ticket ${ticketId} has been approved!`);
-    // Update the ticket status
-    const updatedTickets = ticketData.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'Approved', approvedBy: 'Admin User', approvedAt: new Date().toISOString() }
-        : ticket
-    );
-    // Update pending tickets
-    const pending = updatedTickets.filter(ticket => 
-      ticket.status === 'Pending' && ticket.approvalMethod === 'human'
-    );
-    setPendingTickets(pending);
+    try {
+      await ticketService.updateTicket(ticketId, { status: 'Resolved' });
+      loadTickets(); // Refresh the list
+    } catch (error) {
+      console.error('Error approving ticket:', error);
+    }
   };
 
-  const handleRejectTicket = (ticketId: string) => {
+  const handleRejectTicket = async (ticketId: string) => {
     console.log(`Rejecting ticket: ${ticketId}`);
-    // In a real app, you'd call an API to update the ticket status
-    alert(`Ticket ${ticketId} has been rejected!`);
-    // Update the ticket status
-    const updatedTickets = ticketData.map(ticket => 
-      ticket.id === ticketId 
-        ? { ...ticket, status: 'Rejected', approvedBy: 'Admin User', approvedAt: new Date().toISOString() }
-        : ticket
-    );
-    // Update pending tickets
-    const pending = updatedTickets.filter(ticket => 
-      ticket.status === 'Pending' && ticket.approvalMethod === 'human'
-    );
-    setPendingTickets(pending);
+    try {
+      await ticketService.updateTicket(ticketId, { status: 'Closed' });
+      loadTickets(); // Refresh the list
+    } catch (error) {
+      console.error('Error rejecting ticket:', error);
+    }
   };
 
   const handleViewTicketDetails = (ticket: Ticket) => {
@@ -338,345 +415,287 @@ export default function TicketsPage() {
     setActiveDropdown(null);
   };
 
-  const confirmDeleteTicket = () => {
+  const confirmDeleteTicket = async () => {
     if (ticketToDelete) {
-      console.log(`Deleting ticket: ${ticketToDelete.id}`);
-      alert(`Ticket ${ticketToDelete.id} has been deleted!`);
-      // In a real app, you'd call an API to delete the ticket
+      try {
+        await ticketService.deleteTicket(ticketToDelete.id);
+        loadTickets(); // Refresh the list
       setShowDeleteConfirm(false);
       setTicketToDelete(null);
-    }
-  };
-
-  const handleDuplicateTicket = (ticket: Ticket) => {
-    console.log(`Duplicating ticket: ${ticket.id}`);
-    alert(`Ticket ${ticket.id} has been duplicated!`);
-    setActiveDropdown(null);
-  };
-
-  const handleAssignTicket = (ticket: Ticket) => {
-    console.log(`Assigning ticket: ${ticket.id}`);
-    alert(`Ticket ${ticket.id} assignment dialog opened!`);
-    setActiveDropdown(null);
-  };
-
-  const handleEscalateTicket = (ticket: Ticket) => {
-    console.log(`Escalating ticket: ${ticket.id}`);
-    alert(`Ticket ${ticket.id} has been escalated!`);
-    setActiveDropdown(null);
-  };
-
-  const toggleDropdown = (ticketId: string) => {
-    setActiveDropdown(activeDropdown === ticketId ? null : ticketId);
-  };
-
-  const closeDropdown = () => {
-    setActiveDropdown(null);
-  };
-
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activeDropdown && !(event.target as Element).closest('.dropdown-container')) {
-        setActiveDropdown(null);
+      } catch (error) {
+        console.error('Error deleting ticket:', error);
       }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [activeDropdown]);
-
-  const [newTicket, setNewTicket] = useState({
-    subject: '',
-    description: '',
-    priority: 'Medium',
-    category: 'General',
-    channel: 'Portal',
-    assignee: '',
-    customer: ''
-  });
-  const [advancedFilters, setAdvancedFilters] = useState({
-    priority: 'All',
-    category: 'All',
-    channel: 'All',
-    assignee: 'All',
-    dateRange: 'All',
-    createdAfter: '',
-    createdBefore: ''
-  });
-
-  const getSearchSuggestions = () => {
-    if (!searchTerm.trim()) return [];
-    const suggestions = new Set<string>();
-    ticketData.forEach(ticket => {
-      if (ticket.subject.toLowerCase().includes(searchTerm.toLowerCase())) suggestions.add(ticket.subject);
-      if (ticket.id.toLowerCase().includes(searchTerm.toLowerCase())) suggestions.add(ticket.id);
-      if (ticket.assignee.toLowerCase().includes(searchTerm.toLowerCase())) suggestions.add(ticket.assignee);
-      if (ticket.category.toLowerCase().includes(searchTerm.toLowerCase())) suggestions.add(ticket.category);
-    });
-    return Array.from(suggestions).slice(0, 5);
-  };
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setShowSearchSuggestions(value.length > 0);
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    setSearchTerm(suggestion);
-    setShowSearchSuggestions(false);
-  };
-
-  // AI-powered ticket insights generator
-  const generateTicketInsights = () => {
-    const totalTickets = ticketData.length;
-    const openTickets = ticketData.filter(t => t.status === 'Open').length;
-    const approvedTickets = ticketData.filter(t => t.status === 'Approved').length;
-    const ruleApproved = ticketData.filter(t => t.approvalMethod === 'rule').length;
-    const humanApproved = ticketData.filter(t => t.approvalMethod === 'human').length;
-    const highPriority = ticketData.filter(t => t.priority === 'High').length;
-    const criticalTickets = ticketData.filter(t => t.priority === 'Critical').length;
-
-    const avgResponseTime = '2.3 hours';
-    const escalationRate = '12%';
-    const satisfactionScore = '4.2/5';
-
-    return `📊 **Ticket Performance Analysis**
-
-**Current Status:**
-• ${totalTickets} total tickets in system
-• ${openTickets} open tickets (${((openTickets/totalTickets)*100).toFixed(1)}%)
-• ${approvedTickets} approved tickets (${((approvedTickets/totalTickets)*100).toFixed(1)}%)
-
-**Automation Impact:**
-• ${ruleApproved} auto-approved by rules (${((ruleApproved/totalTickets)*100).toFixed(1)}%)
-• ${humanApproved} human-approved tickets (${((humanApproved/totalTickets)*100).toFixed(1)}%)
-• Automation efficiency: ${((ruleApproved/(ruleApproved+humanApproved))*100).toFixed(1)}%
-
-**Priority Distribution:**
-• ${highPriority} high priority tickets
-• ${criticalTickets} critical tickets requiring immediate attention
-
-**Performance Metrics:**
-• Average response time: ${avgResponseTime}
-• Escalation rate: ${escalationRate}
-• Customer satisfaction: ${satisfactionScore}
-
-**AI Recommendations:**
-• Consider auto-escalating tickets >4 hours old
-• Implement VIP customer priority rules
-• Add sentiment analysis for urgent tickets
-• Create automated follow-up workflows
-
-**Optimization Opportunities:**
-• ${openTickets > 5 ? 'High open ticket volume - consider increasing automation' : 'Ticket volume is manageable'}
-• ${ruleApproved < 3 ? 'Increase rule-based approvals for better efficiency' : 'Good automation coverage'}
-• ${criticalTickets > 0 ? 'Critical tickets need immediate attention' : 'No critical tickets - good health'}`;
-  };
-
-  // Handle advanced filter actions
-  const handleApplyAdvancedFilters = () => {
-    setShowAdvancedFilters(false);
-  };
-
-  const handleClearAdvancedFilters = () => {
-    setAdvancedFilters({
-      priority: 'All',
-      category: 'All',
-      channel: 'All',
-      assignee: 'All',
-      dateRange: 'All',
-      createdAfter: '',
-      createdBefore: ''
-    });
-  };
-
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (advancedFilters.priority !== 'All') count++;
-    if (advancedFilters.category !== 'All') count++;
-    if (advancedFilters.channel !== 'All') count++;
-    if (advancedFilters.assignee !== 'All') count++;
-    if (advancedFilters.createdAfter) count++;
-    if (advancedFilters.createdBefore) count++;
-    return count;
-  };
-
-  const filteredTickets = ticketData.filter(ticket => {
-    const matchesStatus = filterStatus === 'All' || ticket.status === filterStatus;
-    const matchesApproval = filterApproval === 'All' || ticket.approvalMethod === filterApproval;
-    const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (ticket.assignee && ticket.assignee.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (ticket.category && ticket.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         (ticket.description && ticket.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesPriority = advancedFilters.priority === 'All' || ticket.priority === advancedFilters.priority;
-    const matchesCategory = advancedFilters.category === 'All' || ticket.category === advancedFilters.category;
-    const matchesChannel = advancedFilters.channel === 'All' || ticket.channel === advancedFilters.channel;
-    const matchesAssignee = advancedFilters.assignee === 'All' || ticket.assignee === advancedFilters.assignee;
-
-    let matchesDateRange = true;
-    if (advancedFilters.createdAfter) {
-      const createdDate = new Date(ticket.created);
-      const afterDate = new Date(advancedFilters.createdAfter);
-      matchesDateRange = matchesDateRange && createdDate >= afterDate;
     }
-    if (advancedFilters.createdBefore) {
-      const createdDate = new Date(ticket.created);
-      const beforeDate = new Date(advancedFilters.createdBefore);
-      matchesDateRange = matchesDateRange && createdDate <= beforeDate;
-    }
+  };
 
-    return matchesStatus && matchesApproval && matchesSearch && 
-           matchesPriority && matchesCategory && matchesChannel && 
-           matchesAssignee && matchesDateRange;
-  });
+  const handleSaveTicket = async () => {
+    if (selectedTicket) {
+      try {
+        await ticketService.updateTicket(selectedTicket.id, {
+          title: selectedTicket.subject,
+          description: selectedTicket.description,
+          status: selectedTicket.status as any,
+          priority: selectedTicket.priority as any,
+          category: selectedTicket.category
+        });
+        loadTickets(); // Refresh the list
+        setShowEditModal(false);
+        setSelectedTicket(null);
+      } catch (error) {
+        console.error('Error updating ticket:', error);
+      }
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    return priorityColors[priority as keyof typeof priorityColors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getChannelIcon = (channel: string) => {
+    switch (channel.toLowerCase()) {
+      case 'email': return <Mail className="w-4 h-4" />;
+      case 'phone': return <Phone className="w-4 h-4" />;
+      case 'slack': return <Slack className="w-4 h-4" />;
+      case 'web portal': return <Ticket className="w-4 h-4" />;
+      default: return <MessageSquare className="w-4 h-4" />;
+    }
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment.toLowerCase()) {
+      case 'positive': return 'text-green-600';
+      case 'negative': return 'text-red-600';
+      case 'urgent': return 'text-orange-600';
+      default: return 'text-gray-600';
+    }
+  };
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      <div className="space-y-8 p-6">
+    <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              Ticket Management
-            </h1>
-            <p className="text-slate-600 font-medium">Multichannel intake, AI-powered triage, and intelligent routing</p>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Ticket className="w-8 h-8 text-blue-600 mr-3" />
+              <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
           </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={loadTickets}
+                className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </button>
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="group relative inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 hover:from-blue-700 hover:to-indigo-700"
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
           >
-            <Plus size={20} className="mr-2 group-hover:rotate-90 transition-transform duration-200" />
-            <span>Create Ticket</span>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Ticket
           </button>
         </div>
-
-      {/* Multichannel Intake Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-              <Mail className="text-white" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Email</p>
-              <p className="text-2xl font-bold text-slate-800">45</p>
-            </div>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg">
-              <MessageSquare className="text-white" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Portal</p>
-              <p className="text-2xl font-bold text-slate-800">32</p>
-            </div>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg">
-              <Slack className="text-white" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Slack</p>
-              <p className="text-2xl font-bold text-slate-800">18</p>
-            </div>
-          </div>
-        </div>
-        <div className="group relative overflow-hidden bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-white/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-              <Phone className="text-white" size={24} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-600 mb-1">Phone</p>
-              <p className="text-2xl font-bold text-slate-800">12</p>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* AI Insights Panel */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-200 via-purple-200 to-pink-200 rounded-3xl p-8 shadow-2xl">
-        <div className="absolute inset-0 bg-white/10"></div>
-        <div className="relative">
-          <div className="flex items-center justify-between mb-8">
+      {/* Filters */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center space-x-4">
-              <div className="p-4 bg-white/30 backdrop-blur-sm rounded-2xl shadow-lg">
-                <Brain className="text-purple-600" size={28} />
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search tickets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">AI Insights & Automation</h3>
-                <p className="text-gray-600">Intelligent ticket processing and automation</p>
               </div>
-            </div>
-            <button
-              onClick={() => {
-                const generatedInsights = generateTicketInsights();
-                setInsights(generatedInsights);
-                setShowInsights(true);
-              }}
-              className="group relative px-6 py-3 bg-white/30 backdrop-blur-sm text-purple-600 font-semibold rounded-xl hover:bg-white/40 transition-all duration-200 hover:scale-105 shadow-lg"
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <Brain size={20} className="inline mr-2 group-hover:animate-pulse" />
-              <span>Get Detailed Insights</span>
-            </button>
+              <option value="all">All Status</option>
+              <option value="open">Open</option>
+              <option value="pending">Pending</option>
+              <option value="in progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Priority</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="critical">Critical</option>
+            </select>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="group bg-white/20 backdrop-blur-sm p-6 rounded-2xl hover:bg-white/30 transition-all duration-300 hover:scale-105 border border-white/30">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Zap className="text-blue-500" size={20} />
                 </div>
-                <span className="font-semibold text-gray-800">Auto-Assignment</span>
               </div>
-              <p className="text-gray-600 text-sm">87% accuracy rate</p>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            <div className="group bg-white/20 backdrop-blur-sm p-6 rounded-2xl hover:bg-white/30 transition-all duration-300 hover:scale-105 border border-white/30">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Bot className="text-blue-500" size={20} />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Open Tickets</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tickets.filter(t => t.status === 'Open').length}
+                </p>
                 </div>
-                <span className="font-semibold text-gray-800">Rule-Based Approvals</span>
               </div>
-              <p className="text-gray-600 text-sm">{ticketData.filter(t => t.approvalMethod === 'rule').length} tickets auto-approved</p>
             </div>
-            <div className="group bg-white/20 backdrop-blur-sm p-6 rounded-2xl hover:bg-white/30 transition-all duration-300 hover:scale-105 border border-white/30">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <AlertCircle className="text-orange-500" size={20} />
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <Clock className="w-8 h-8 text-yellow-600" />
                 </div>
-                <span className="font-semibold text-gray-800">Escalation Prediction</span>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">In Progress</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tickets.filter(t => t.status === 'In Progress').length}
+                </p>
               </div>
-              <p className="text-gray-600 text-sm">3 tickets flagged for escalation</p>
             </div>
-            <div className="group bg-white/20 backdrop-blur-sm p-6 rounded-2xl hover:bg-white/30 transition-all duration-300 hover:scale-105 border border-white/30">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="text-green-500" size={20} />
                 </div>
-                <span className="font-semibold text-gray-800">Duplicate Detection</span>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-gray-600 text-sm">5 duplicates prevented</p>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Resolved</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {tickets.filter(t => t.status === 'Resolved').length}
+                </p>
             </div>
           </div>
         </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <TrendingUp className="w-8 h-8 text-blue-600" />
       </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Tickets</p>
+                <p className="text-2xl font-bold text-gray-900">{tickets.length}</p>
+                    </div>
+                        </div>
+        </div>
+      </div>
+
+      {/* Tickets Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ticket
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Requester
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+              </tr>
+            </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredTickets.map((ticket) => (
+                  <tr key={ticket.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                        <div className="text-sm font-medium text-gray-900">{ticket.subject}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">{ticket.description}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(ticket.status)}`}>
+                        {ticket.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(ticket.priority)}`}>
+                        {ticket.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {ticket.requester}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {ticket.created}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleViewTicketDetails(ticket)}
+                          className="text-blue-600 hover:text-blue-900"
+                              >
+                          <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleEditTicket(ticket)}
+                          className="text-green-600 hover:text-green-900"
+                              >
+                          <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTicket(ticket)}
+                          className="text-red-600 hover:text-red-900"
+                              >
+                          <Trash2 className="w-4 h-4" />
+                              </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+        {/* Empty State */}
+        {filteredTickets.length === 0 && (
+          <div className="text-center py-12">
+            <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No tickets found</h3>
+            <p className="text-gray-500">Try adjusting your search or filters.</p>
+        </div>
+      )}
+                </div>
 
       {/* Human Approval Chamber */}
-      {pendingTickets.length > 0 && (
+      {showApprovalChamber && (
         <HumanApprovalChamber
           pendingTickets={pendingTickets}
           onApprove={handleApproveTicket}
@@ -685,661 +704,6 @@ export default function TicketsPage() {
         />
       )}
 
-      {/* Filters and Search */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-6">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-              <input
-                type="text"
-                placeholder="Search tickets..."
-                value={searchTerm}
-                onChange={handleSearchInputChange}
-                onFocus={() => searchTerm && setShowSearchSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSearchSuggestions(false), 200)}
-                className="pl-12 pr-4 py-3 w-80 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-400"
-              />
-              
-              {/* Search Suggestions */}
-              {showSearchSuggestions && getSearchSuggestions().length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 z-50">
-                  <div className="p-3">
-                    <div className="text-xs text-slate-500 px-3 py-2 border-b border-slate-100 font-medium">
-                      Suggestions
-                    </div>
-                    {getSearchSuggestions().map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-3 py-3 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Search size={16} className="text-slate-400" />
-                          <span className="text-sm text-slate-700 font-medium">{suggestion}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-slate-700 font-medium"
-              >
-                <option value="All">All Status</option>
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Approved">Approved</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
-                <option value="Escalated">Escalated</option>
-              </select>
-              <select
-                value={filterApproval}
-                onChange={(e) => setFilterApproval(e.target.value)}
-                className="px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 text-slate-700 font-medium"
-              >
-                <option value="All">All Approvals</option>
-                <option value="rule">Rule-Based</option>
-                <option value="human">Human Approval</option>
-              </select>
-            </div>
-          </div>
-          <button 
-            onClick={() => setShowAdvancedFilters(true)}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors ${
-              getActiveFiltersCount() > 0 
-                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' 
-                : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <Filter size={16} className="text-gray-400" />
-            <span className="text-sm">Advanced Filters</span>
-            {getActiveFiltersCount() > 0 && (
-              <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5 ml-1">
-                {getActiveFiltersCount()}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Tickets Table */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Ticket</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Subject</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Priority</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Status</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Approval</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Channel</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Assignee</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Created</th>
-                <th className="text-left py-4 px-6 font-bold text-slate-700 text-sm uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTickets.map((ticket) => {
-                const ChannelIcon = channelIcons[ticket.channel];
-                return (
-                  <tr key={ticket.id} className={`group hover:bg-slate-50/50 transition-all duration-200 ${
-                    ticket.approvalMethod === 'rule' ? 'bg-blue-50/30' : ''
-                  }`}>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-sm">
-                            {ticket.id.split('-').pop()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-800">{ticket.id}</div>
-                          <div className="flex items-center space-x-2">
-                            {ticket.aiInsights && (
-                              <div title={ticket.aiInsights}>
-                                <Brain size={16} className="text-purple-500" />
-                              </div>
-                            )}
-                            {ticket.approvalMethod === 'rule' && (
-                              <Bot size={16} className="text-blue-500" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-6 px-6">
-                      <div>
-                        <p className="font-bold text-slate-800 text-sm">{ticket.subject}</p>
-                        <p className="text-sm text-slate-500 font-medium">{ticket.category}</p>
-                        {ticket.ruleUsed && (
-                          <p className="text-xs text-blue-600 mt-1 font-medium">
-                            Rule: {ticket.ruleUsed}
-                          </p>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-6 px-6">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-full ${priorityColors[ticket.priority]}`}>
-                        {ticket.priority}
-                      </span>
-                    </td>
-                    <td className="py-6 px-6">
-                      <span className={`px-3 py-1 text-xs font-bold rounded-full ${statusColors[ticket.status]}`}>
-                        {ticket.status}
-                      </span>
-                    </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-2">
-                        {ticket.approvalMethod === 'rule' ? (
-                          <div className="flex items-center space-x-2">
-                            <Bot size={16} className="text-blue-500" />
-                            <span className="text-xs text-blue-600 font-bold">Auto</span>
-                          </div>
-                        ) : ticket.approvalMethod === 'human' ? (
-                          <div className="flex items-center space-x-2">
-                            <UserCheck size={16} className="text-green-500" />
-                            <span className="text-xs text-green-600 font-bold">Human</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-500 font-medium">Pending</span>
-                        )}
-                      </div>
-                      {ticket.approvedAt && (
-                        <div className="text-xs text-slate-500 mt-1 font-medium">
-                          {new Date(ticket.approvedAt).toLocaleString()}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-3">
-                        <ChannelIcon size={18} className="text-slate-500" />
-                        <span className="text-sm text-slate-600 font-medium">{ticket.channel}</span>
-                      </div>
-                    </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shadow-md">
-                          <User size={14} className="text-white" />
-                        </div>
-                        <span className="text-sm text-slate-600 font-medium">{ticket.assignee}</span>
-                      </div>
-                    </td>
-                    <td className="py-6 px-6">
-                      <div className="flex items-center space-x-3">
-                        <Clock size={18} className="text-slate-500" />
-                        <span className="text-sm text-slate-600 font-medium">{ticket.created}</span>
-                      </div>
-                    </td>
-                    <td className="py-6 px-6">
-                      <div className="relative dropdown-container">
-                        <button 
-                          onClick={() => toggleDropdown(ticket.id)}
-                          className="p-2 hover:bg-slate-100 rounded-xl transition-all duration-200 group"
-                        >
-                          <MoreVertical size={18} className="text-slate-400 group-hover:text-slate-600" />
-                        </button>
-                        
-                        {activeDropdown === ticket.id && (
-                          <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 z-50 overflow-hidden">
-                            <div className="py-2">
-                              <button
-                                onClick={() => handleViewTicketDetails(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <Eye size={18} className="text-blue-500" />
-                                <span className="font-medium">View Details</span>
-                              </button>
-                              <button
-                                onClick={() => handleEditTicket(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-green-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <Edit size={18} className="text-green-500" />
-                                <span className="font-medium">Edit Ticket</span>
-                              </button>
-                              <button
-                                onClick={() => handleDuplicateTicket(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-purple-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <Copy size={18} className="text-purple-500" />
-                                <span className="font-medium">Duplicate</span>
-                              </button>
-                              <button
-                                onClick={() => handleAssignTicket(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <UserPlus size={18} className="text-blue-500" />
-                                <span className="font-medium">Assign</span>
-                              </button>
-                              <button
-                                onClick={() => handleEscalateTicket(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-blue-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <TrendingUp size={18} className="text-blue-500" />
-                                <span className="font-medium">Escalate</span>
-                              </button>
-                              <hr className="my-2 border-slate-200" />
-                              <button
-                                onClick={() => handleDeleteTicket(ticket)}
-                                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3 transition-colors duration-200"
-                              >
-                                <Trash2 size={18} className="text-red-500" />
-                                <span className="font-medium">Delete</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* AI Insights Modal */}
-      {showInsights && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Brain className="text-purple-600" size={24} />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900">AI Ticket Insights</h2>
-              </div>
-              <button
-                onClick={() => setShowInsights(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1">
-              <div className="prose prose-sm max-w-none">
-                <div className="whitespace-pre-line text-gray-700 leading-relaxed">
-                  {insights}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0">
-              <button
-                onClick={() => setShowInsights(false)}
-                className="btn-secondary"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  const generatedInsights = generateTicketInsights();
-                  setInsights(generatedInsights);
-                }}
-                className="btn-primary flex items-center space-x-2"
-              >
-                <Brain size={16} />
-                <span>Refresh Insights</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Ticket Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl max-w-3xl w-full max-h-[95vh] overflow-hidden border border-white/20">
-            <div className="flex items-center justify-between p-8 border-b border-slate-200 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl shadow-lg">
-                  <Plus className="text-white" size={28} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">Create New Ticket</h2>
-                  <p className="text-white/80">Fill out the form below to create a new support ticket</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-xl transition-all duration-200"
-              >
-                <X size={24} />
-              </button>
-            </div>
-            <div className="p-8 overflow-y-auto max-h-[calc(95vh-200px)]">
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-3">
-                    Subject *
-                  </label>
-                  <input
-                    type="text"
-                    value={newTicket.subject}
-                    onChange={(e) => setNewTicket({...newTicket, subject: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-400"
-                    placeholder="Enter ticket subject"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-3">
-                    Description
-                  </label>
-                  <textarea
-                    value={newTicket.description}
-                    onChange={(e) => setNewTicket({...newTicket, description: e.target.value})}
-                    rows={5}
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-400 resize-none"
-                    placeholder="Describe the issue or request"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Priority
-                    </label>
-                    <select
-                      value={newTicket.priority}
-                      onChange={(e) => setNewTicket({...newTicket, priority: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Critical">Critical</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      value={newTicket.category}
-                      onChange={(e) => setNewTicket({...newTicket, category: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="General">General</option>
-                      <option value="Technical">Technical</option>
-                      <option value="Billing">Billing</option>
-                      <option value="Security">Security</option>
-                      <option value="Access">Access</option>
-                      <option value="Hardware">Hardware</option>
-                      <option value="Software">Software</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Channel
-                    </label>
-                    <select
-                      value={newTicket.channel}
-                      onChange={(e) => setNewTicket({...newTicket, channel: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Portal">Portal</option>
-                      <option value="Email">Email</option>
-                      <option value="Phone">Phone</option>
-                      <option value="Slack">Slack</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assignee
-                    </label>
-                    <input
-                      type="text"
-                      value={newTicket.assignee}
-                      onChange={(e) => setNewTicket({...newTicket, assignee: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Leave empty for auto-assignment"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Customer
-                  </label>
-                  <input
-                    type="text"
-                    value={newTicket.customer}
-                    onChange={(e) => setNewTicket({...newTicket, customer: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Customer name or email"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-4 p-8 border-t border-slate-200 bg-gradient-to-r from-slate-50 to-slate-100">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-6 py-3 text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition-all duration-200 font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  const ticket = {
-                    id: `TCK-2024-${String(ticketData.length + 1).padStart(3, '0')}`,
-                    subject: newTicket.subject,
-                    description: newTicket.description,
-                    priority: newTicket.priority,
-                    category: newTicket.category,
-                    channel: newTicket.channel,
-                    status: 'Open',
-                    assignee: newTicket.assignee || 'Unassigned',
-                    requester: newTicket.customer || 'Anonymous',
-                    customer: newTicket.customer || 'Anonymous',
-                    created: new Date().toISOString().slice(0, 16).replace('T', ' '),
-                    updated: new Date().toISOString().slice(0, 16).replace('T', ' '),
-                    sla: '24h',
-                    tags: [],
-                    sentiment: 'neutral',
-                    aiInsights: 'New ticket created',
-                    approvalMethod: 'pending',
-                    approvedBy: '',
-                    approvedAt: null
-                  };
-                  ticketData.unshift(ticket);
-                  setNewTicket({
-                    subject: '',
-                    description: '',
-                    priority: 'Medium',
-                    category: 'General',
-                    channel: 'Portal',
-                    assignee: '',
-                    customer: ''
-                  });
-                  setShowCreateModal(false);
-                  alert('Ticket created successfully!');
-                }}
-                className="group px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 flex items-center space-x-2"
-              >
-                <Plus size={18} className="group-hover:rotate-90 transition-transform duration-200" />
-                <span>Create Ticket</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Advanced Filters Modal */}
-      {showAdvancedFilters && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Filter className="text-gray-600" size={24} />
-                </div>
-                <h2 className="text-xl font-semibold text-gray-900">Advanced Filters</h2>
-              </div>
-              <button
-                onClick={() => setShowAdvancedFilters(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-              >
-                ×
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Priority
-                    </label>
-                    <select
-                      value={advancedFilters.priority}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, priority: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="All">All Priorities</option>
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Critical">Critical</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Category
-                    </label>
-                    <select
-                      value={advancedFilters.category}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, category: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="All">All Categories</option>
-                      <option value="General">General</option>
-                      <option value="Technical">Technical</option>
-                      <option value="Billing">Billing</option>
-                      <option value="Security">Security</option>
-                      <option value="Access">Access</option>
-                      <option value="Hardware">Hardware</option>
-                      <option value="Software">Software</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Channel
-                    </label>
-                    <select
-                      value={advancedFilters.channel}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, channel: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="All">All Channels</option>
-                      <option value="Portal">Portal</option>
-                      <option value="Email">Email</option>
-                      <option value="Phone">Phone</option>
-                      <option value="Slack">Slack</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Assignee
-                    </label>
-                    <select
-                      value={advancedFilters.assignee}
-                      onChange={(e) => setAdvancedFilters({...advancedFilters, assignee: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="All">All Assignees</option>
-                      <option value="John Doe">John Doe</option>
-                      <option value="Jane Smith">Jane Smith</option>
-                      <option value="Mike Johnson">Mike Johnson</option>
-                      <option value="Sarah Wilson">Sarah Wilson</option>
-                      <option value="Unassigned">Unassigned</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Date Range</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Created After
-                      </label>
-                      <input
-                        type="date"
-                        value={advancedFilters.createdAfter}
-                        onChange={(e) => setAdvancedFilters({...advancedFilters, createdAfter: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Created Before
-                      </label>
-                      <input
-                        type="date"
-                        value={advancedFilters.createdBefore}
-                        onChange={(e) => setAdvancedFilters({...advancedFilters, createdBefore: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {getActiveFiltersCount() > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                      <Filter className="text-blue-600" size={16} />
-                      <span className="text-sm font-medium text-blue-800">
-                        {getActiveFiltersCount()} filter{getActiveFiltersCount() > 1 ? 's' : ''} active
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-between p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={handleClearAdvancedFilters}
-                className="btn-secondary"
-              >
-                Clear All Filters
-              </button>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowAdvancedFilters(false)}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleApplyAdvancedFilters}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <Filter size={16} />
-                  <span>Apply Filters</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Ticket Details Modal */}
       {showTicketDetails && selectedTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1355,146 +719,41 @@ export default function TicketsPage() {
             </div>
             
             <div className="space-y-4">
+                <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                <p className="text-gray-900">{selectedTicket.subject}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <p className="text-gray-900">{selectedTicket.description}</p>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Ticket ID</label>
-                  <p className="text-lg font-semibold text-gray-900">{selectedTicket.id}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[selectedTicket.status]}`}>
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedTicket.status)}`}>
                     {selectedTicket.status}
                   </span>
-                </div>
               </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-500">Subject</label>
-                <p className="text-lg text-gray-900">{selectedTicket.subject}</p>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-gray-500">Description</label>
-                <p className="text-gray-700">{selectedTicket.description}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Priority</label>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${priorityColors[selectedTicket.priority]}`}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(selectedTicket.priority)}`}>
                     {selectedTicket.priority}
                   </span>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Category</label>
-                  <p className="text-gray-900">{selectedTicket.category}</p>
-                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Channel</label>
-                  <p className="text-gray-900">{selectedTicket.channel}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Assignee</label>
-                  <p className="text-gray-900">{selectedTicket.assignee || 'Unassigned'}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Requester</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Requester</label>
                   <p className="text-gray-900">{selectedTicket.requester}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">SLA</label>
-                  <p className="text-gray-900">{selectedTicket.sla}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Created</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Created</label>
                   <p className="text-gray-900">{selectedTicket.created}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Updated</label>
-                  <p className="text-gray-900">{selectedTicket.updated}</p>
                 </div>
-              </div>
-              
-              {selectedTicket.tags && selectedTicket.tags.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Tags</label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {selectedTicket.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {selectedTicket.aiInsights && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">AI Insights</label>
-                  <p className="text-gray-700 bg-purple-50 p-3 rounded-lg">{selectedTicket.aiInsights}</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowTicketDetails(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setShowTicketDetails(false);
-                  handleEditTicket(selectedTicket);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Edit Ticket
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && ticketToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-red-100 rounded-full">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900">Delete Ticket</h2>
-            </div>
-            
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete ticket <strong>{ticketToDelete.id}</strong>? 
-              This action cannot be undone.
-            </p>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteTicket}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
             </div>
           </div>
         </div>
@@ -1556,7 +815,6 @@ export default function TicketsPage() {
                     onChange={(e) => setSelectedTicket({...selectedTicket, status: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Pending">Pending</option>
                     <option value="Open">Open</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
@@ -1564,43 +822,17 @@ export default function TicketsPage() {
                   </select>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <input
-                    type="text"
-                    value={selectedTicket.category}
-                    onChange={(e) => setSelectedTicket({...selectedTicket, category: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Assignee</label>
-                  <input
-                    type="text"
-                    value={selectedTicket.assignee || ''}
-                    onChange={(e) => setSelectedTicket({...selectedTicket, assignee: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter assignee name"
-                  />
-                </div>
-              </div>
             </div>
             
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  console.log('Saving ticket:', selectedTicket);
-                  alert('Ticket updated successfully!');
-                  setShowEditModal(false);
-                }}
+                onClick={handleSaveTicket}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Save Changes
@@ -1609,10 +841,42 @@ export default function TicketsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && ticketToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Delete Ticket</h2>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
       </div>
+            
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete ticket "{ticketToDelete.subject}"? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteTicket}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-
-

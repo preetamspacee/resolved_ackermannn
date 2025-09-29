@@ -11,13 +11,19 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "dev:customer": "npm --workspace @bsm/customer-portal run dev",
+    "dev:customer3002": "npm --workspace @bsm/customer-portal-3002 run dev",
     "dev:admin": "npm --workspace @bsm/admin-dashboard run dev",
     "build": "turbo run build",
     "build:admin": "npm --workspace @bsm/admin-dashboard run build",
+    "build:customer": "npm --workspace @bsm/customer-portal run build",
+    "build:customer3002": "npm --workspace @bsm/customer-portal-3002 run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "turbo run format",
-    "start": "turbo run start"
+    "start": "turbo run start",
+    "start:admin": "npm --workspace @bsm/admin-dashboard run start",
+    "start:customer": "npm --workspace @bsm/customer-portal run start",
+    "start:customer3002": "npm --workspace @bsm/customer-portal-3002 run start"
   },
   "devDependencies": {
     "eslint": "^9.35.0",

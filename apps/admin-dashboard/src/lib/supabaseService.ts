@@ -291,6 +291,17 @@ export const knowledgeBaseService = {
   async incrementViews(id: string): Promise<void> {
     const { error } = await supabase.rpc('increment_views', { article_id: id });
     if (error) throw error;
+  },
+
+  async getCategories(): Promise<string[]> {
+    const { data, error } = await service
+      .from('knowledge_base')
+      .select('category')
+      .not('category', 'is', null);
+    
+    if (error) throw error;
+    const categories = [...new Set(data?.map(item => item.category).filter(Boolean) || [])];
+    return categories;
   }
 };
 
@@ -494,7 +505,7 @@ export const analyticsService = {
   async getDashboardStats() {
     const [usersCount, accountsCount, assetsCount, ticketsCount, workflowsCount, knowledgeCount] = await Promise.all([
       service.from("users").select("*", { count: "exact", head: true }),
-      serviceforom("accounts").select("*", { count: "exact", head: true }),
+      service.from("accounts").select("*", { count: "exact", head: true }),
       service.from("assets").select("*", { count: "exact", head: true }),
       service.from("tickets").select("*", { count: "exact", head: true }),
       service.from("workflows").select("*", { count: "exact", head: true }),

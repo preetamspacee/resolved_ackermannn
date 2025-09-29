@@ -117,7 +117,7 @@ export default function LoginPage() {
             router.push('/admin');
           } else {
             // Redirect to customer portal on port 3000
-            window.location.href = 'http://localhost:3000';
+            window.location.href = 'http://localhost:3002';
           }
         }, 1500);
       }
@@ -138,7 +138,7 @@ export default function LoginPage() {
       if (typeof window !== 'undefined' && (window as any).google) {
         // Use Google Identity Services
         const client = (window as any).google.accounts.oauth2.initTokenClient({
-          client_id: '301055350173-9up9t5job4gssg2c0dtt4m4rge2nlnvs.apps.googleusercontent.com',
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your_google_client_id_here',
           scope: 'email profile',
           callback: async (response: any) => {
             try {
@@ -179,7 +179,7 @@ export default function LoginPage() {
                       router.push('/admin');
                     } else {
                       // Redirect to customer portal on port 3000
-                      window.location.href = 'http://localhost:3000';
+                      window.location.href = 'http://localhost:3002';
                     }
                   }, 1500);
                 } else {
@@ -200,7 +200,7 @@ export default function LoginPage() {
       } else {
         // Fallback: Use popup window approach
         const googleAuthUrl = `https://accounts.google.com/oauth/authorize?` +
-          `client_id=301055350173-9up9t5job4gssg2c0dtt4m4rge2nlnvs.apps.googleusercontent.com&` +
+          `client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'your_google_client_id_here'}&` +
           `redirect_uri=${encodeURIComponent(`${window.location.origin}/auth/google/callback`)}&` +
           `scope=email profile&` +
           `response_type=token&` +
@@ -242,7 +242,7 @@ export default function LoginPage() {
                 router.push('/admin');
               } else {
                 // Redirect to customer portal on port 3000
-                window.location.href = 'http://localhost:3000';
+                window.location.href = 'http://localhost:3002';
               }
             }, 1500);
             
@@ -487,12 +487,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Google Auth */}
+            {/* Google Auth - Disabled until properly configured */}
             <div>
               <button
                 type="button"
-                onClick={handleGoogleAuth}
-                className="w-full flex justify-center py-4 px-6 border border-gray-300 rounded-lg shadow-sm text-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => setError('Google OAuth is not configured. Please use email/password login or contact administrator.')}
+                disabled={true}
+                className="w-full flex justify-center py-4 px-6 border border-gray-300 rounded-lg shadow-sm text-lg font-semibold text-gray-500 bg-gray-100 cursor-not-allowed"
               >
                 <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -500,7 +501,7 @@ export default function LoginPage() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                {isSignup ? `Sign up with Google` : `Sign in with Google`}
+                {isSignup ? `Sign up with Google (Disabled)` : `Sign in with Google (Disabled)`}
               </button>
             </div>
 

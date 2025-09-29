@@ -69,7 +69,10 @@ const KnowledgePage: React.FC = () => {
         status: 'Draft',
         tags: [],
         featured: false,
-        author_id: '11111111-1111-1111-1111-111111111111' // TODO: Use actual user ID from auth
+        author_id: '11111111-1111-1111-1111-111111111111', // TODO: Use actual user ID from auth
+        views: 0,
+        helpful_votes: 0,
+        not_helpful_votes: 0
       });
 
       setArticles([newArticle, ...articles]);
