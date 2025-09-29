@@ -127,12 +127,10 @@ const AdminDashboard: React.FC = () => {
         chart: [0, 0, 0, 0, 0, 0, 0]
       }
     ],
-  accountHealth: [] as any[],
-  recentActivity: [] as any[],
-  loading: true
-});
-
-  const [loading, setLoading] = useState(true);
+    accountHealth: [] as any[],
+    recentActivity: [] as any[],
+    loading: true
+  });
 
   useEffect(() => {
     const loadDashboardData = async () => {

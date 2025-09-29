@@ -6,15 +6,6 @@ import { KnowledgeBase } from '../lib/supabase';
 const KnowledgePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showNewArticleModal,<｜tool▁sep｜>new_string
-import React, { useState, useEffect } from 'react';
-import { BookOpen, FileText, Folder, TrendingUp, Eye, ThumbsUp, Search, Plus, BarChart3, CheckCircle2, Star, Edit, AlertCircle } from 'lucide-react';
-import { knowledgeBaseService } from '../lib/supabaseService';
-import { KnowledgeBase } from '../lib/supabase';
-
-const KnowledgePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [searchTerm, setSearchTerm] = useState('');
   const [showNewArticleModal, setShowNewArticleModal] = useState(false);
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeBase | null>(null);
@@ -28,6 +19,10 @@ const KnowledgePage: React.FC = () => {
     title: '',
     category: 'Getting Started',
     content: ''
+  });
+  const [newCategoryForm, setNewCategoryForm] = useState({
+    name: '',
+    description: ''
   });
 
   // Load data from Supabase
@@ -49,35 +44,8 @@ const KnowledgePage: React.FC = () => {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
-  const [newCategoryForm, setNewCategoryForm] = useState({
-    name: '',
-    description: ''
-  });
-
-  // Handler functions
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleNewArticle = () => {
-    setShowNewArticleModal(true);
-  };
-
-  const handleNewCategory = () => {
-    setShowNewCategoryModal(true);
-  };
-
-  const handleEditArticle = (article: any) => {
-    setSelectedArticle(article);
-    alert(`Editing article: ${article.title}`);
-  };
-
-  const handleViewArticle = (article: any) => {
-    alert(`Viewing article: ${article.title}\nStatus: ${article.status}\nViews: ${article.views}\nHelpful: ${article.helpful}%`);
-  };
 
   const handleCloseModal = () => {
     setShowNewArticleModal(false);
@@ -119,16 +87,15 @@ const KnowledgePage: React.FC = () => {
       return;
     }
 
-    const newCategory = {
-      id: (categories.length + 1).toString(),
-      name: newCategoryForm.name,
-      count: 0
-    };
-
-    setCategories([...categories, newCategory]);
+    setCategories([...categories, newCategoryForm.name]);
     alert('Category created successfully!');
     handleCloseModal();
   };
+
+  const filteredArticles = articles.filter(article =>
+    article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    article.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
@@ -186,28 +153,54 @@ const KnowledgePage: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Moved Analytics Quick View into Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Searches</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-900">how to setup account</span>
-              <span className="text-xs text-gray-500">3 results</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-900">billing issues</span>
-              <span className="text-xs text-gray-500">2 results</span>
-            </div>
+      
+      {/* Featured Articles */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Featured Articles</h3>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            {articles.filter(article => article.featured).slice(0, 5).map((article) => (
+              <div key={article.id} className="flex items-center space-x-3">
+                <Star className="w-5 h-5 text-yellow-500" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900">{article.title}</h4>
+                  <p className="text-sm text-gray-500">{article.category}</p>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <Eye className="w-4 h-4" />
+                  <span>{article.views}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Zero Result Searches</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-900">mobile app download</span>
-              <span className="text-xs text-red-500">0 results</span>
-            </div>
+      </div>
+      
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            {articles.slice(0, 5).map((article) => (
+              <div key={article.id} className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Edit className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900">{article.title}</h4>
+                  <p className="text-sm text-gray-500">{article.category} • {new Date(article.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className={`px-2 py-1 text-xs rounded-full ${
+                  article.status === 'Published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {article.status}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -216,123 +209,58 @@ const KnowledgePage: React.FC = () => {
 
   const renderArticles = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex space-x-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search articles..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <button 
-            onClick={handleNewArticle}
-            className="btn-primary flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Article</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Article</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Helpful %</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {articles.map((article) => (
-              <tr key={article.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="flex items-center space-x-2">
-                        <button 
-                          onClick={() => handleViewArticle(article)}
-                          className="text-sm font-medium text-gray-900 hover:text-blue-600 cursor-pointer"
-                        >
-                          {article.title}
-                        </button>
-                        {article.featured && <Star className="w-4 h-4 text-yellow-500" />}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    article.status === 'published' ? 'text-green-600 bg-green-100' : 'text-blue-600 bg-blue-100'
-                  }`}>
-                    {article.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{article.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{article.views.toLocaleString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{article.helpful}%</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => handleEditArticle(article)}
-                      className="text-blue-600 hover:text-blue-900"
-                      title="Edit Article"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleViewArticle(article)}
-                      className="text-green-600 hover:text-green-900"
-                      title="View Article"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const renderCategories = () => (
-    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
-        <button 
-          onClick={handleNewCategory}
-          className="btn-primary flex items-center space-x-2"
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search articles..."
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <button
+          onClick={() => setShowNewArticleModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
-          <Plus className="w-4 h-4" />
-          <span>New Category</span>
+          <Plus className="w-5 h-5" />
+          <span>New Article</span>
         </button>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <div key={category.id} className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Folder className="w-6 h-6 text-blue-600" />
+        {filteredArticles.map((article) => (
+          <div key={article.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+            <div className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{article.title}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{article.category}</p>
+                  <p className="text-sm text-gray-700 line-clamp-3">{article.content}</p>
+                </div>
+                <div className="ml-4 flex flex-col items-end space-y-2">
+                  <div className={`px-2 py-1 text-xs rounded-full ${
+                    article.status === 'Published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {article.status}
+                  </div>
+                  {article.featured && <Star className="w-4 h-4 text-yellow-500" />}
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-                <p className="text-sm text-gray-500">{category.count} articles</p>
+              
+              <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{article.views}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <ThumbsUp className="w-4 h-4" />
+                    <span>{article.helpful_votes || 0}</span>
+                  </div>
+                </div>
+                <span>{new Date(article.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -341,108 +269,150 @@ const KnowledgePage: React.FC = () => {
     </div>
   );
 
-  // removed separate Analytics tab; content moved to Overview
+  const renderCategories = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
+        <button
+          onClick={() => setShowNewCategoryModal(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <Plus className="w-5 h-5" />
+          <span>New Category</span>
+        </button>
+      </div>
 
-  // settings tab fully removed
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview': return renderOverview();
-      case 'articles': return renderArticles();
-      case 'categories': return renderCategories();
-      default: return renderOverview();
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BookOpen className="w-6 h-6 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {categories.map((category) => {
+          const categoryArticles = articles.filter(article => article.category === category);
+          return (
+            <div key={category} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow">
+              <div className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{category}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{categoryArticles.length} articles</p>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Eye className="w-4 h-4 mr-1" />
+                      <span>{categoryArticles.reduce((sum, article) => sum + article.views, 0)} total views</span>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Folder className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Manage articles, categories, and analytics</p>
-            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">Error</h3>
+          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <div className="mt-6">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="bg-white border-b border-gray-200">
-        <div className="px-6">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Knowledge Base</h1>
+          <p className="text-gray-600">Manage articles, categories, and analytics</p>
         </div>
       </div>
 
-      <div className="px-6 py-8">
-        {renderTabContent()}
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <tab.icon className="w-5 h-5" />
+                <span>{tab.label}</span>
+              </div>
+            </button>
+          ))}
+        </nav>
       </div>
 
-      {/* New Article Modal */}
+      {/* Tab Content */}
+      {activeTab === 'overview' && renderOverview()}
+      {activeTab === 'articles' && renderArticles()}
+      {activeTab === 'categories' && renderCategories()}
+
+      {/* Modals */}
       {showNewArticleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Create New Article</h3>
+            <h3 className="text-lg font-medium mb-4">Create New Article</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                <input 
-                  type="text" 
-                  value={newArticleForm.title}
-                  onChange={(e) => setNewArticleForm({...newArticleForm, title: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter article title"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select 
-                  value={newArticleForm.category}
-                  onChange={(e) => setNewArticleForm({...newArticleForm, category: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                <textarea 
-                  value={newArticleForm.content}
-                  onChange={(e) => setNewArticleForm({...newArticleForm, content: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-32"
-                  placeholder="Enter article content"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Article Title"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={newArticleForm.title}
+                onChange={(e) => setNewArticleForm({ ...newArticleForm, title: e.target.value })}
+              />
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={newArticleForm.category}
+                onChange={(e) => setNewArticleForm({ ...newArticleForm, category: e.target.value })}
+              >
+                <option value="Getting Started">Getting Started</option>
+                <option value="Account Management">Account Management</option>
+                <option value="Billing & Payments">Billing & Payments</option>
+                <option value="API Documentation">API Documentation</option>
+                <option value="Technical Support">Technical Support</option>
+              </select>
+              <textarea
+                placeholder="Article Content"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                rows={4}
+                value={newArticleForm.content}
+                onChange={(e) => setNewArticleForm({ ...newArticleForm, content: e.target.value })}
+              />
             </div>
             <div className="flex justify-end space-x-3 mt-6">
-              <button 
+              <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleCreateArticle}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
@@ -453,40 +423,34 @@ const KnowledgePage: React.FC = () => {
         </div>
       )}
 
-      {/* New Category Modal */}
       {showNewCategoryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Create New Category</h3>
+            <h3 className="text-lg font-medium mb-4">Create New Category</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                <input 
-                  type="text" 
-                  value={newCategoryForm.name}
-                  onChange={(e) => setNewCategoryForm({...newCategoryForm, name: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter category name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea 
-                  value={newCategoryForm.description}
-                  onChange={(e) => setNewCategoryForm({...newCategoryForm, description: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
-                  placeholder="Enter category description"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Category Name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={newCategoryForm.name}
+                onChange={(e) => setNewCategoryForm({ ...newCategoryForm, name: e.target.value })}
+              />
+              <textarea
+                placeholder="Category Description"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                value={newCategoryForm.description}
+                onChange={(e) => setNewCategoryForm({ ...newCategoryForm, description: e.target.value })}
+              />
             </div>
             <div className="flex justify-end space-x-3 mt-6">
-              <button 
+              <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleCreateCategory}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
@@ -501,5 +465,3 @@ const KnowledgePage: React.FC = () => {
 };
 
 export default KnowledgePage;
-
-

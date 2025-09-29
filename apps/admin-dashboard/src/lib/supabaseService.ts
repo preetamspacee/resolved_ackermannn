@@ -488,94 +488,24 @@ export const ruleService = {
   }
 };
 
-// Knowledge Base Management
-export const knowledgeBaseService = {
-  async getArticles(): Promise<KnowledgeBase[]> {
-    const { data, error } = await service
-      .from('knowledge_base')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
-  },
-
-  async getArticle(id: string): Promise<KnowledgeBase> {
-    const { data, error } = await service
-      .from('knowledge_base')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error) throw error;
-    return data;
-  },
-
-  async createArticle(article: Omit<KnowledgeBase, 'id' | 'created_at' | 'updated_at' | 'views' | 'helpful_votes' | 'not_helpful_votes'>): Promise<KnowledgeBase> {
-    const { data, error } = await service
-      .from('knowledge_base')
-      .insert([article])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  },
-
-  async updateArticle(id: string, updates: Partial<KnowledgeBase>): Promise<KnowledgeBase> {
-    const { data, error } = await service
-      .from('knowledge_base')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  },
-
-  async deleteArticle(id: string): Promise<void> {
-    const { error } = await service
-      .from('knowledge_base')
-      .delete()
-      .eq('id', id);
-    
-    if (error) throw error;
-  },
-
-  async getCategories(): Promise<string[]> {
-    const { data, error } = await service
-      .from('knowledge_base')
-      .select('category')
-      .not('category', 'is', null);
-    
-    if (error) throw error;
-    
-    // Extract unique categories
-    const categories = [...new Set(data?.map(item => item.category).filter(Boolean))] as string[];
-    return categories;
-  }
-};
 
 // Analytics and Dashboard Data
 export const analyticsService = {
   async getDashboardStats() {
-    // Get real data from Supabase
     const [usersCount, accountsCount, assetsCount, ticketsCount, workflowsCount, knowledgeCount] = await Promise.all([
-      service.from('users').select('*', { count: 'exact', head: true }),
-      service.from('accounts').select('*', { count: 'exact', head: true }),
-      service.from('assets').select('*', { count: 'exact', head: true }),
-      service.from('tickets').select('*', { count: 'exact', head: true }),
-      service.from('workflows').select('*', { count: 'exact', head: true }),
-      service.from('knowledge_base').select('*', { count: 'exact', head: true })
+      service.from("users").select("*", { count: "exact", head: true }),
+      serviceforom("accounts").select("*", { count: "exact", head: true }),
+      service.from("assets").select("*", { count: "exact", head: true }),
+      service.from("tickets").select("*", { count: "exact", head: true }),
+      service.from("workflows").select("*", { count: "exact", head: true }),
+      service.from("knowledge_base").select("*", { count: "exact", head: true })
     ]);
-
-    // Get open tickets count
+    
     const { count: openTicketsCount } = await service
-      .from('tickets')
-      .select('*', { count: 'exact', head: true })
-      .in('status', ['Open', 'In Progress']);
-
+      .from("tickets")
+      .select("*", { count: "exact", head: true })
+      .in("status", ["Open", "In Progress"]);
+    
     return {
       totalUsers: usersCount.count || 0,
       totalAccounts: accountsCount.count || 0,
@@ -584,15 +514,15 @@ export const analyticsService = {
       totalWorkflows: workflowsCount.count || 0,
       totalKnowledgeArticles: knowledgeCount.count || 0,
       openTickets: openTicketsCount || 0,
-      inProgressTickets: 15,
-      resolvedTickets: 51,
-      activeWorkflows: 8
+      inProgressTickets: 15, // Still mock
+      resolvedTickets: 51, // Still mock
+      activeWorkflows: 8 // Still mock
     };
   },
 
   async getRecentActivity() {
     const { data, error } = await service
-      .from('tickets')
+      .from("tickets")
       .select(`
         id,
         title,
@@ -601,9 +531,9 @@ export const analyticsService = {
         created_at,
         created_user:users!tickets_created_by_fkey(name, email)
       `)
-      .order('created_at', { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(10);
-
+    
     if (error) throw error;
     return data || [];
   }
