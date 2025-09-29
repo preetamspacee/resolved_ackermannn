@@ -1,43 +1,57 @@
-import React, { useState } from 'react';
-import { BookOpen, FileText, Folder, TrendingUp, Eye, ThumbsUp, Search, Plus, BarChart3, CheckCircle2, Star, Edit } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, FileText, Folder, TrendingUp, Eye, ThumbsUp, Search, Plus, BarChart3, CheckCircle2, Star, Edit, AlertCircle } from 'lucide-react';
+import { knowledgeBaseService } from '../lib/supabaseService';
+import { KnowledgeBase } from '../lib/supabase';
+
+const KnowledgePage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showNewArticleModal,<｜tool▁sep｜>new_string
+import React, { useState, useEffect } from 'react';
+import { BookOpen, FileText, Folder, TrendingUp, Eye, ThumbsUp, Search, Plus, BarChart3, CheckCircle2, Star, Edit, AlertCircle } from 'lucide-react';
+import { knowledgeBaseService } from '../lib/supabaseService';
+import { KnowledgeBase } from '../lib/supabase';
 
 const KnowledgePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewArticleModal, setShowNewArticleModal] = useState(false);
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState(null);
-
-  const mockData = {
-    articles: [
-      { id: '1', title: 'Welcome to Our Platform', status: 'published', views: 1250, helpful: 90, category: 'Getting Started', featured: true },
-      { id: '2', title: 'Account Setup Guide', status: 'published', views: 890, helpful: 91, category: 'Account Management', featured: true },
-      { id: '3', title: 'Billing and Payment Methods', status: 'published', views: 650, helpful: 80, category: 'Billing & Payments', featured: false },
-      { id: '4', title: 'API Authentication Guide', status: 'review', views: 420, helpful: 88, category: 'API Documentation', featured: false },
-      { id: '5', title: 'Troubleshooting Common Issues', status: 'published', views: 1100, helpful: 89, category: 'Technical Support', featured: false }
-    ],
-    categories: [
-      { id: '1', name: 'Getting Started', count: 1 },
-      { id: '2', name: 'Account Management', count: 1 },
-      { id: '3', name: 'Billing & Payments', count: 1 },
-      { id: '4', name: 'Technical Support', count: 1 },
-      { id: '5', name: 'API Documentation', count: 1 }
-    ],
-    analytics: {
-      totalArticles: 5,
-      publishedArticles: 4,
-      totalViews: 4310,
-      totalFeedback: 195
-    }
-  };
-
-  const [articles, setArticles] = useState(mockData.articles);
-  const [categories, setCategories] = useState(mockData.categories);
+  const [selectedArticle, setSelectedArticle] = useState<KnowledgeBase | null>(null);
+  
+  // Dynamic state
+  const [articles, setArticles] = useState<KnowledgeBase[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [newArticleForm, setNewArticleForm] = useState({
     title: '',
     category: 'Getting Started',
     content: ''
   });
+
+  // Load data from Supabase
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [articlesData, categoriesData] = await Promise.all([
+          knowledgeBaseService.getArticles(),
+          knowledgeBaseService.getCategories()
+        ]);
+        setArticles(articlesData);
+        setCategories(categoriesData);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load knowledge base data');
+        console.error('Error loading knowledge base:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
   const [newCategoryForm, setNewCategoryForm] = useState({
     name: '',
     description: ''
@@ -73,25 +87,30 @@ const KnowledgePage: React.FC = () => {
     setNewCategoryForm({ name: '', description: '' });
   };
 
-  const handleCreateArticle = () => {
+  const handleCreateArticle = async () => {
     if (!newArticleForm.title.trim()) {
       alert('Please enter a title for the article');
       return;
     }
 
-    const newArticle = {
-      id: (articles.length + 1).toString(),
-      title: newArticleForm.title,
-      status: 'review',
-      views: 0,
-      helpful: 0,
-      category: newArticleForm.category,
-      featured: false
-    };
+    try {
+      const newArticle = await knowledgeBaseService.createArticle({
+        title: newArticleForm.title,
+        content: newArticleForm.content || '',
+        category: newArticleForm.category,
+        status: 'Draft',
+        tags: [],
+        featured: false,
+        author_id: '11111111-1111-1111-1111-111111111111' // TODO: Use actual user ID from auth
+      });
 
-    setArticles([...articles, newArticle]);
-    alert('Article created successfully!');
-    handleCloseModal();
+      setArticles([newArticle, ...articles]);
+      alert('Article created successfully!');
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error creating article:', error);
+      alert('Failed to create article. Please try again.');
+    }
   };
 
   const handleCreateCategory = () => {
@@ -138,7 +157,7 @@ const KnowledgePage: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Published</p>
-              <p className="text-2xl font-bold text-gray-900">{articles.filter(a => a.status === 'published').length}</p>
+              <p className="text-2xl font-bold text-gray-900">{articles.filter(a => a.status === 'Published').length}</p>
             </div>
           </div>
         </div>
@@ -160,7 +179,9 @@ const KnowledgePage: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Feedback</p>
-              <p className="text-2xl font-bold text-gray-900">{mockData.analytics.totalFeedback}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {articles.reduce((sum, article) => sum + (article.helpful_votes || 0), 0)}
+              </p>
             </div>
           </div>
         </div>

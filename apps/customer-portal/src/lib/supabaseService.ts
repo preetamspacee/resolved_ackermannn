@@ -1,5 +1,4 @@
 import { supabase, User, Account, Asset, Ticket, KnowledgeBase, Notification, ServiceRequest } from './supabase';
-import { mockSupabaseService } from './mockSupabaseService';
 
 // Always use real Supabase service
 const service = supabase;
