@@ -190,24 +190,38 @@ export default function TicketsPage() {
 
   const handleCreateTicket = async (data: CreateTicketData) => {
     try {
-      if (user?.id) {
-        // Convert to Supabase format
-        const ticketData = {
-          subject: data.subject,
-          description: data.description,
-          priority: data.priority,
-          category: data.category,
-          created_by: user.id,
-          status: 'Open' as const,
-          tags: data.tags || [],
-          customer_email: user.email || 'customer@example.com'
-        };
-        await customerTicketService.createTicket(ticketData);
-        await loadTickets();
-        setShowCreateModal(false);
+      if (!user?.id) {
+        console.error('User not authenticated');
+        alert('Please log in to create a ticket');
+        return;
       }
+
+      console.log('Creating ticket with data:', data);
+      console.log('User ID:', user.id);
+
+      // Convert to Supabase format
+      const ticketData = {
+        title: data.subject, // Map subject to title for database
+        subject: data.subject, // Also keep subject field
+        description: data.description,
+        priority: data.priority.charAt(0).toUpperCase() + data.priority.slice(1), // Capitalize
+        category: data.category,
+        created_by: user.id,
+        status: 'Open' as const,
+        tags: data.tags || [],
+        customer_email: user.email || 'customer@example.com'
+      };
+
+      console.log('Ticket data to insert:', ticketData);
+      const newTicket = await customerTicketService.createTicket(ticketData);
+      console.log('Ticket created successfully:', newTicket);
+      
+      await loadTickets();
+      setShowCreateModal(false);
+      alert('Ticket created successfully!');
     } catch (error) {
       console.error('Error creating ticket:', error);
+      alert('Failed to create ticket. Please try again.');
     }
   };
 

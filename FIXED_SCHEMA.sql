@@ -85,6 +85,12 @@ CREATE TABLE tickets (
     due_date TIMESTAMP WITH TIME ZONE,
     resolution TEXT,
     tags TEXT[],
+    -- Additional fields for customer portal
+    subject VARCHAR(255),
+    customer_email VARCHAR(255),
+    sla_deadline TIMESTAMP WITH TIME ZONE,
+    channel VARCHAR(50) DEFAULT 'Portal',
+    sentiment VARCHAR(50) DEFAULT 'Neutral',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

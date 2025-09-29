@@ -48,25 +48,26 @@ export const customerTicketService = {
   },
 
   async createTicket(ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>): Promise<Ticket> {
-    // Add required sla_deadline field (7 days from now)
-    const slaDeadline = new Date();
-    slaDeadline.setDate(slaDeadline.getDate() + 7);
-    
-    const ticketData = {
-      ...ticket,
-      sla_deadline: slaDeadline.toISOString(),
-      channel: 'Portal',
-      sentiment: 'Neutral'
-    };
-    
-    const { data, error } = await supabase
-      .from('tickets')
-      .insert([ticketData])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
+    try {
+      console.log('Supabase createTicket called with:', ticket);
+      
+      const { data, error } = await supabase
+        .from('tickets')
+        .insert([ticket])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Ticket created in Supabase:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in customerTicketService.createTicket:', error);
+      throw error;
+    }
   },
 
   async updateTicket(id: string, updates: Partial<Ticket>): Promise<Ticket> {
