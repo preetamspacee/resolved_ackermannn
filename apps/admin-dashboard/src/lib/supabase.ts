@@ -1,17 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Real Supabase project for BSM Platform
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fcdfwqengcmtsatrkwin.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZGZ3cWVuZ2NtdHNhdHJrd2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MTI1MjAsImV4cCI6MjA3MzI4ODUyMH0.e0VLoxpCLdXzPX0ihTcJiXPmnf3mn9o1Go1hKYvXENE';
+// Supabase configuration - reads from environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Check if we're using real Supabase
-const isRealSupabase = supabaseUrl === 'https://fcdfwqengcmtsatrkwin.supabase.co';
-
-if (isRealSupabase) {
-  console.log('🚀 Connected to real Supabase project for BSM Platform');
-} else {
-  console.log('⚠️ Using fallback Supabase configuration');
+// Validate environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
 }
+
+console.log('🚀 Connected to Supabase project:', supabaseUrl);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
