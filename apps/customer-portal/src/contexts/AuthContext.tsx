@@ -55,6 +55,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userData = JSON.parse(storedUser);
             console.log('🔍 AuthContext: Loaded user data from localStorage:', userData);
             
+            // Check if the user ID is in the old invalid format
+            if (userData.id && userData.id.startsWith('test_user_')) {
+              console.log('🚨 AuthContext: Found invalid UUID format, clearing localStorage');
+              localStorage.removeItem('bsm_user');
+              localStorage.removeItem('token');
+              setUser(null);
+              return;
+            }
+            
             // Validate user data structure
             if (userData && userData.id && userData.email && userData.accountType) {
               // Ensure the user data has all required fields

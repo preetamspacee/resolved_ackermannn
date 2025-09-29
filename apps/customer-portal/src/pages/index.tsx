@@ -156,6 +156,23 @@ const Dashboard: React.FC = () => {
             Manage your support tickets and access our services
           </p>
           
+          {/* Clear Cache Button */}
+          {!user && (
+            <div className="mb-4">
+              <button
+                onClick={() => {
+                  // Clear all localStorage data
+                  localStorage.clear();
+                  alert('✅ Cache cleared! Refresh the page and try logging in again.');
+                  window.location.reload();
+                }}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium"
+              >
+                🗑️ Clear Cache & Refresh
+              </button>
+            </div>
+          )}
+
           {/* Debug Login Buttons */}
           {!user && (
             <div className="mt-4 space-y-2">
