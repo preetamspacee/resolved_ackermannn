@@ -13,15 +13,14 @@
     "dev:customer": "npm --workspace @bsm/customer-portal run dev",
     "dev:admin": "npm --workspace @bsm/admin-dashboard run dev",
     "build": "turbo run build",
+    "build:admin": "npm --workspace @bsm/admin-dashboard run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "turbo run format",
-    "start": "turbo run start",
-    "prepare": "husky install"
+    "start": "turbo run start"
   },
   "devDependencies": {
     "eslint": "^9.35.0",
-    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2"
