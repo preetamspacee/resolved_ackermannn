@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
@@ -9,12 +10,16 @@ const nextConfig = {
   async rewrites() {
     return [
       {
+        source: '/welcome',
+        destination: '/apps/admin-dashboard/welcome',
+      },
+      {
         source: '/admin/:path*',
-        destination: '/admin-dashboard/:path*',
+        destination: '/apps/admin-dashboard/:path*',
       },
       {
         source: '/customer/:path*',
-        destination: '/customer-portal/:path*',
+        destination: '/apps/customer-portal/:path*',
       },
     ];
   },
