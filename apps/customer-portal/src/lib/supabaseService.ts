@@ -63,7 +63,7 @@ export const customerTicketService = {
 
   async createTicket(ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>): Promise<Ticket> {
     try {
-      console.log('Supabase createTicket called with:', ticket);
+      console.log('🔍 Supabase createTicket called with:', ticket);
       
       const { data, error } = await supabase
         .from('tickets')
@@ -72,14 +72,30 @@ export const customerTicketService = {
         .single();
       
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('❌ Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to create ticket';
+        if (error.code === 'PGRST204') {
+          errorMessage = 'Database table not found. Please deploy the updated schema to Supabase first.';
+        } else if (error.code === 'PGRST116') {
+          errorMessage = 'Column not found. Please check if your database schema is up to date.';
+        } else if (error.message) {
+          errorMessage = `Database error: ${error.message}`;
+        }
+        
+        throw new Error(errorMessage);
       }
       
-      console.log('Ticket created in Supabase:', data);
+      console.log('✅ Ticket created in Supabase:', data);
       return data;
     } catch (error) {
-      console.error('Error in customerTicketService.createTicket:', error);
+      console.error('❌ Error in customerTicketService.createTicket:', error);
       throw error;
     }
   },

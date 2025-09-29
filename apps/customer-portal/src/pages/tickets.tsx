@@ -232,8 +232,11 @@ export default function TicketsPage() {
       setShowCreateModal(false);
       alert('Ticket created successfully!');
     } catch (error) {
-      console.error('Error creating ticket:', error);
-      alert('Failed to create ticket. Please try again.');
+      console.error('❌ Error creating ticket:', error);
+      
+      // Show more specific error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create ticket. Please try again.';
+      alert(`❌ ${errorMessage}`);
     }
   };
 

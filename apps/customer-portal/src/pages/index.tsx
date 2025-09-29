@@ -156,14 +156,54 @@ const Dashboard: React.FC = () => {
             Manage your support tickets and access our services
           </p>
           
-          {/* Debug Login Button */}
+          {/* Debug Login Buttons */}
           {!user && (
-            <div className="mt-4">
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={async () => {
+                  try {
+                    // Use existing user from Supabase
+                    const testUser = {
+                      id: '22222222-2222-2222-2222-222222222222', // John Doe from your database
+                      email: 'john.doe@techcorp.com',
+                      name: 'John Doe',
+                      accountType: 'Customer' as const,
+                      verified: true,
+                      authMethod: 'email' as const
+                    };
+                    login(testUser);
+                  } catch (error) {
+                    console.error('Login error:', error);
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium block w-full"
+              >
+                🔧 Login as John Doe (TechCorp Customer)
+              </button>
+              
               <button
                 onClick={() => {
                   const testUser = {
-                    id: 'test_user_' + Date.now(),
-                    email: 'customer@example.com',
+                    id: '33333333-3333-3333-3333-333333333333', // Jane Smith from your database
+                    email: 'jane.smith@startupxyz.com',
+                    name: 'Jane Smith',
+                    accountType: 'Customer' as const,
+                    verified: true,
+                    authMethod: 'email' as const
+                  };
+                  login(testUser);
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium block w-full"
+              >
+                🔧 Login as Jane Smith (StartupXYZ Customer)
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Create a timestamp-based user but handle the foreign key issue
+                  const testUser = {
+                    id: '44444444-4444-4444-4444-444444444444', // Will fail foreign key constraint
+                    email: 'test@example.com',
                     name: 'Test Customer',
                     accountType: 'Customer' as const,
                     verified: true,
@@ -171,9 +211,9 @@ const Dashboard: React.FC = () => {
                   };
                   login(testUser);
                 }}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium block w-full"
               >
-                🔧 Debug: Login as Customer
+                🔧 Login as Test Customer (May Fail - For Testing)
               </button>
             </div>
           )}
