@@ -188,7 +188,7 @@ export const mockTickets: Ticket[] = [
     account_id: '1',
     asset_id: '1',
     due_date: '2024-01-25T17:00:00Z',
-    resolution: null,
+    resolution: undefined,
     tags: ['performance', 'server', 'urgent'],
     created_at: '2024-01-20T09:00:00Z',
     updated_at: '2024-01-20T09:00:00Z'
@@ -206,7 +206,7 @@ export const mockTickets: Ticket[] = [
     account_id: '2',
     asset_id: '2',
     due_date: '2024-01-30T12:00:00Z',
-    resolution: null,
+    resolution: undefined,
     tags: ['license', 'renewal', 'office365'],
     created_at: '2024-01-21T11:30:00Z',
     updated_at: '2024-01-21T11:30:00Z'
