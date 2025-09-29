@@ -47,23 +47,34 @@ const Dashboard: React.FC = () => {
     setIsClient(true);
     console.log('🔍 Dashboard: User data:', user);
     
-    // Auto-redirect to admin dashboard welcome page
-    const redirectTimer = setTimeout(() => {
-      window.location.href = 'http://localhost:3001/welcome';
-    }, 1000); // 1 second delay to show the page briefly
+    // Check if this is the first visit (one-time redirect only)
+    const hasRedirectedBefore = localStorage.getItem('customer_portal_redirected');
     
-    // Fallback: Auto-click hidden button after 2 seconds
-    const buttonTimer = setTimeout(() => {
-      const hiddenBtn = document.getElementById('auto-redirect-btn');
-      if (hiddenBtn) {
-        hiddenBtn.click();
-      }
-    }, 2000);
+    if (!hasRedirectedBefore && !user) {
+      // First time visit - set flag and redirect
+      localStorage.setItem('customer_portal_redirected', 'true');
+      
+      // Auto-redirect to admin dashboard welcome page (one-time only)
+      const redirectTimer = setTimeout(() => {
+        window.location.href = 'http://localhost:3001/welcome';
+      }, 1000); // 1 second delay to show the page briefly
+      
+      // Fallback: Auto-click hidden button after 2 seconds
+      const buttonTimer = setTimeout(() => {
+        const hiddenBtn = document.getElementById('auto-redirect-btn');
+        if (hiddenBtn) {
+          hiddenBtn.click();
+        }
+      }, 2000);
+      
+      return () => {
+        clearTimeout(redirectTimer);
+        clearTimeout(buttonTimer);
+      };
+    }
     
-    return () => {
-      clearTimeout(redirectTimer);
-      clearTimeout(buttonTimer);
-    };
+    // If user is logged in or has been redirected before, stay on customer portal
+    console.log('🔍 Staying on customer portal - user logged in or already redirected');
   }, [user]);
 
   // Mock data for demonstration
@@ -174,12 +185,23 @@ const Dashboard: React.FC = () => {
             Manage your support tickets and access our services
           </p>
           
-          {/* Redirect Notice */}
-          <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
-            <p className="text-blue-800 text-sm">
-              🔄 Redirecting to Admin Dashboard Welcome Page in a moment...
-            </p>
-          </div>
+          {/* Redirect Notice - Only show on first visit */}
+          {!user && !localStorage.getItem('customer_portal_redirected') && (
+            <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                🔄 Redirecting to Admin Dashboard Welcome Page in a moment...
+              </p>
+            </div>
+          )}
+          
+          {/* Welcome back message for returning users */}
+          {!user && localStorage.getItem('customer_portal_redirected') && (
+            <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+              <p className="text-green-800 text-sm">
+                👋 Welcome back! You can now use the customer portal normally.
+              </p>
+            </div>
+          )}
           
           {/* Hidden Auto-Redirect Button */}
           <button
@@ -195,7 +217,7 @@ const Dashboard: React.FC = () => {
 
           {/* Clear Cache Button */}
           {!user && (
-            <div className="mb-4">
+            <div className="mb-4 space-x-2">
               <button
                 onClick={() => {
                   // Clear all localStorage data
@@ -206,6 +228,18 @@ const Dashboard: React.FC = () => {
                 className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-xs font-medium"
               >
                 🗑️ Clear Cache & Refresh
+              </button>
+              
+              <button
+                onClick={() => {
+                  // Reset redirect flag for testing
+                  localStorage.removeItem('customer_portal_redirected');
+                  alert('✅ Redirect flag reset! Next visit will redirect to welcome page.');
+                  window.location.reload();
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-xs font-medium"
+              >
+                🔄 Reset Redirect Flag
               </button>
             </div>
           )}
