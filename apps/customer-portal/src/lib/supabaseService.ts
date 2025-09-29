@@ -32,19 +32,33 @@ export const customerService = {
 // Ticket Management for Customers
 export const customerTicketService = {
   async getMyTickets(userId: string): Promise<Ticket[]> {
-    const { data, error } = await supabase
-      .from('tickets')
-      .select(`
-        *,
-        assigned_user:users!tickets_assigned_to_fkey(name, email),
-        account:accounts!tickets_account_id_fkey(name),
-        asset:assets!tickets_asset_id_fkey(name, type)
-      `)
-      .eq('created_by', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data || [];
+    try {
+      console.log('🔍 Supabase getMyTickets called with userId:', userId);
+      
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`
+          *,
+          assigned_user:users!tickets_assigned_to_fkey(name, email),
+          account:accounts!tickets_account_id_fkey(name),
+          asset:assets!tickets_asset_id_fkey(name, type)
+        `)
+        .eq('created_by', userId)
+        .order('created_at', { ascending: false });
+      
+      console.log('🔍 Supabase query result:', { data, error });
+      
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Tickets found:', data?.length || 0);
+      return data || [];
+    } catch (error) {
+      console.error('❌ Error in getMyTickets:', error);
+      throw error;
+    }
   },
 
   async createTicket(ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>): Promise<Ticket> {

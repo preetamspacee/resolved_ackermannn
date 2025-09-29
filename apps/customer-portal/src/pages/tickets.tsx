@@ -109,12 +109,24 @@ export default function TicketsPage() {
 
   const loadTickets = async () => {
     try {
-      if (user?.id) {
-        const allTickets = await customerTicketService.getMyTickets(user.id);
-        setTickets(allTickets);
+      console.log('🔍 Loading tickets. User:', user);
+      
+      if (!user) {
+        console.log('❌ No user found - tickets cannot be loaded');
+        return;
       }
+
+      if (!user.id) {
+        console.log('❌ User has no ID - tickets cannot be loaded');
+        return;
+      }
+
+      console.log('✅ User found with ID:', user.id);
+      const allTickets = await customerTicketService.getMyTickets(user.id);
+      console.log('📊 Loaded tickets:', allTickets);
+      setTickets(allTickets);
     } catch (error) {
-      console.error('Error loading tickets:', error);
+      console.error('❌ Error loading tickets:', error);
     }
   };
 

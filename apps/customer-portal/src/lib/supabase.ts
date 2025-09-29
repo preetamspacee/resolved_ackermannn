@@ -177,6 +177,12 @@ export interface Database {
           due_date?: string;
           resolution?: string;
           tags?: string[];
+          // Additional fields for customer portal
+          subject?: string;
+          customer_email?: string;
+          sla_deadline?: string;
+          channel?: string;
+          sentiment?: string;
           created_at: string;
           updated_at: string;
         };
@@ -195,6 +201,12 @@ export interface Database {
           due_date?: string;
           resolution?: string;
           tags?: string[];
+          // Additional fields for customer portal
+          subject?: string;
+          customer_email?: string;
+          sla_deadline?: string;
+          channel?: string;
+          sentiment?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -213,6 +225,12 @@ export interface Database {
           due_date?: string;
           resolution?: string;
           tags?: string[];
+          // Additional fields for customer portal
+          subject?: string;
+          customer_email?: string;
+          sla_deadline?: string;
+          channel?: string;
+          sentiment?: string;
           created_at?: string;
           updated_at?: string;
         };
