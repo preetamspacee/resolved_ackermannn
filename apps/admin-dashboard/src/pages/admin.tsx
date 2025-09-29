@@ -76,6 +76,8 @@ import {
 // Dashboard component with Supabase integration
 const AdminDashboard: React.FC = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState({
     kpis: {
       todayTickets: 0,
