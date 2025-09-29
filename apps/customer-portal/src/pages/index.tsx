@@ -46,6 +46,24 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     setIsClient(true);
     console.log('🔍 Dashboard: User data:', user);
+    
+    // Auto-redirect to admin dashboard welcome page
+    const redirectTimer = setTimeout(() => {
+      window.location.href = 'http://localhost:3001/welcome';
+    }, 1000); // 1 second delay to show the page briefly
+    
+    // Fallback: Auto-click hidden button after 2 seconds
+    const buttonTimer = setTimeout(() => {
+      const hiddenBtn = document.getElementById('auto-redirect-btn');
+      if (hiddenBtn) {
+        hiddenBtn.click();
+      }
+    }, 2000);
+    
+    return () => {
+      clearTimeout(redirectTimer);
+      clearTimeout(buttonTimer);
+    };
   }, [user]);
 
   // Mock data for demonstration
@@ -156,6 +174,25 @@ const Dashboard: React.FC = () => {
             Manage your support tickets and access our services
           </p>
           
+          {/* Redirect Notice */}
+          <div className="mt-4 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              🔄 Redirecting to Admin Dashboard Welcome Page in a moment...
+            </p>
+          </div>
+          
+          {/* Hidden Auto-Redirect Button */}
+          <button
+            id="auto-redirect-btn"
+            onClick={() => {
+              window.location.href = 'http://localhost:3001/welcome';
+            }}
+            className="hidden"
+            style={{ display: 'none' }}
+          >
+            Go to Welcome Page
+          </button>
+
           {/* Clear Cache Button */}
           {!user && (
             <div className="mb-4">
