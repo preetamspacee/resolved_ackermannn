@@ -37,7 +37,8 @@ import {
   MoreVertical,
   RefreshCw
 } from 'lucide-react';
-import { ticketService, Ticket, TicketFilters, CreateTicketData } from '../lib/ticketService';
+import { customerTicketService } from '../lib/supabaseService';
+import { Ticket, TicketFilters, CreateTicketData } from '../lib/ticketService';
 import TicketCreationModal from '../components/TicketCreationModal';
 import TicketDetailsModal from '../components/TicketDetailsModal';
 import AdvancedTicketFilters from '../components/AdvancedTicketFilters';
@@ -108,8 +109,10 @@ export default function TicketsPage() {
 
   const loadTickets = async () => {
     try {
-      const allTickets = await ticketService.getTickets();
-      setTickets(allTickets);
+      if (user?.id) {
+        const allTickets = await customerTicketService.getMyTickets(user.id);
+        setTickets(allTickets);
+      }
     } catch (error) {
       console.error('Error loading tickets:', error);
     }
@@ -187,16 +190,22 @@ export default function TicketsPage() {
 
   const handleCreateTicket = async (data: CreateTicketData) => {
     try {
-      // Add user information to the ticket data
-      const ticketData = {
-        ...data,
-        createdBy: user?.name || 'Unknown User',
-        createdByEmail: user?.email || 'unknown@example.com',
-        createdByAvatar: user?.picture || ''
-      };
-      await ticketService.createTicket(ticketData);
-      await loadTickets();
-      setShowCreateModal(false);
+      if (user?.id) {
+        // Convert to Supabase format
+        const ticketData = {
+          subject: data.subject,
+          description: data.description,
+          priority: data.priority,
+          category: data.category,
+          created_by: user.id,
+          status: 'Open' as const,
+          tags: data.tags || [],
+          customer_email: user.email || 'customer@example.com'
+        };
+        await customerTicketService.createTicket(ticketData);
+        await loadTickets();
+        setShowCreateModal(false);
+      }
     } catch (error) {
       console.error('Error creating ticket:', error);
     }

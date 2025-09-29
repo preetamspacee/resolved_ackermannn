@@ -1,13 +1,19 @@
 {
   "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "installCommand": "npm install",
+  "builds": [
+    {
+      "src": "apps/admin-dashboard/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "apps/customer-portal/package.json", 
+      "use": "@vercel/next"
+    }
+  ],
   "routes": [
     {
       "src": "/",
-      "dest": "/apps/admin-dashboard/out/index.html"
+      "dest": "/apps/admin-dashboard"
     },
     {
       "src": "/admin/(.*)",
@@ -16,13 +22,6 @@
     {
       "src": "/customer/(.*)",
       "dest": "/apps/customer-portal/$1"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/apps/admin-dashboard/pages/api/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }

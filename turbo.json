@@ -1,12 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "build/**"]
+      "outputs": ["dist/**", ".next/**", "build/**"],
+      "env": ["NODE_ENV", "NEXT_PUBLIC_*", "VERCEL_URL", "VERCEL_ENV"]
     },
     "dev": {
-      "cache": false
+      "cache": false,
+      "env": ["NODE_ENV"]
     },
     "lint": {},
     "test": {},

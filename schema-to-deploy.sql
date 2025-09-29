@@ -225,34 +225,34 @@ CREATE POLICY "Admins can manage rules" ON rules
         )
     );
 INSERT INTO users (id, email, name, role, company, department) VALUES
-    ('550e8400-e29b-41d4-a716-446655440000', 'admin@bsm.com', 'Admin User', 'admin', 'BSM Corp', 'IT'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'customer@bsm.com', 'John Customer', 'customer', 'Customer Corp', 'Operations'),
-    ('550e8400-e29b-41d4-a716-446655440002', 'agent@bsm.com', 'Support Agent', 'agent', 'BSM Corp', 'Support');
+    ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'admin@bsm.com', 'Admin User', 'admin', 'BSM Corp', 'IT'),
+    ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'customer@bsm.com', 'John Customer', 'customer', 'Customer Corp', 'Operations'),
+    ('550e8400-e29b-41d4-a716-446655440002'::uuid, 'agent@bsm.com', 'Support Agent', 'agent', 'BSM Corp', 'Support');
 INSERT INTO accounts (id, name, type, status, industry, size, contact_email) VALUES
-    ('660e8400-e29b-41d4-a716-446655440000', 'Customer Corp', 'enterprise', 'active', 'Technology', '1000+', 'contact@customer.com'),
-    ('660e8400-e29b-41d4-a716-446655440001', 'Small Business Inc', 'small_business', 'active', 'Retail', '50-100', 'info@smallbiz.com');
+    ('660e8400-e29b-41d4-a716-446655440000'::uuid, 'Customer Corp', 'enterprise', 'active', 'Technology', '1000+', 'contact@customer.com'),
+    ('660e8400-e29b-41d4-a716-446655440001'::uuid, 'Small Business Inc', 'small_business', 'active', 'Retail', '50-100', 'info@smallbiz.com');
 INSERT INTO assets (id, name, type, status, priority, location, ip_address, owner_id, account_id) VALUES
-    ('770e8400-e29b-41d4-a716-446655440000', 'Web Server 01', 'server', 'operational', 'high', 'Data Center A', '192.168.1.100', '550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440000'),
-    ('770e8400-e29b-41d4-a716-446655440001', 'Database Server', 'database', 'operational', 'critical', 'Data Center A', '192.168.1.101', '550e8400-e29b-41d4-a716-446655440000', '660e8400-e29b-41d4-a716-446655440000');
+    ('770e8400-e29b-41d4-a716-446655440000'::uuid, 'Web Server 01', 'server', 'operational', 'high', 'Data Center A', '192.168.1.100', '550e8400-e29b-41d4-a716-446655440000'::uuid, '660e8400-e29b-41d4-a716-446655440000'::uuid),
+    ('770e8400-e29b-41d4-a716-446655440001'::uuid, 'Database Server', 'database', 'operational', 'critical', 'Data Center A', '192.168.1.101', '550e8400-e29b-41d4-a716-446655440000'::uuid, '660e8400-e29b-41d4-a716-446655440000'::uuid);
 INSERT INTO tickets (id, subject, description, status, priority, category, created_by, assigned_to, account_id) VALUES
-    ('880e8400-e29b-41d4-a716-446655440000', 'Login Issue', 'Cannot access the portal', 'Open', 'High', 'Authentication', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '660e8400-e29b-41d4-a716-446655440000'),
-    ('880e8400-e29b-41d4-a716-446655440001', 'Feature Request', 'Need new dashboard widget', 'In Progress', 'Medium', 'Enhancement', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '660e8400-e29b-41d4-a716-446655440000'),
-    ('880e8400-e29b-41d4-a716-446655440002', 'Bug Report', 'Chart not displaying correctly', 'Resolved', 'High', 'Bug', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '660e8400-e29b-41d4-a716-446655440000');
+    ('880e8400-e29b-41d4-a716-446655440000'::uuid, 'Login Issue', 'Cannot access the portal', 'Open', 'High', 'Authentication', '550e8400-e29b-41d4-a716-446655440001'::uuid, '550e8400-e29b-41d4-a716-446655440002'::uuid, '660e8400-e29b-41d4-a716-446655440000'::uuid),
+    ('880e8400-e29b-41d4-a716-446655440001'::uuid, 'Feature Request', 'Need new dashboard widget', 'In Progress', 'Medium', 'Enhancement', '550e8400-e29b-41d4-a716-446655440001'::uuid, '550e8400-e29b-41d4-a716-446655440002'::uuid, '660e8400-e29b-41d4-a716-446655440000'::uuid),
+    ('880e8400-e29b-41d4-a716-446655440002'::uuid, 'Bug Report', 'Chart not displaying correctly', 'Resolved', 'High', 'Bug', '550e8400-e29b-41d4-a716-446655440001'::uuid, '550e8400-e29b-41d4-a716-446655440002'::uuid, '660e8400-e29b-41d4-a716-446655440000'::uuid);
 INSERT INTO dashboard_stats (user_id, metric_name, metric_value, metric_unit) VALUES
-    ('550e8400-e29b-41d4-a716-446655440000', 'total_tickets', 150, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440000', 'open_tickets', 25, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440000', 'resolved_tickets', 125, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440000', 'avg_resolution_time', 4.5, 'hours'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'my_tickets', 3, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'open_tickets', 1, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'resolved_tickets', 2, 'count'),
-    ('550e8400-e29b-41d4-a716-446655440001', 'satisfaction_score', 4.2, 'rating');
+    ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'total_tickets', 150, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'open_tickets', 25, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'resolved_tickets', 125, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440000'::uuid, 'avg_resolution_time', 4.5, 'hours'),
+    ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'my_tickets', 3, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'open_tickets', 1, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'resolved_tickets', 2, 'count'),
+    ('550e8400-e29b-41d4-a716-446655440001'::uuid, 'satisfaction_score', 4.2, 'rating');
 INSERT INTO knowledge_base (id, title, content, category, tags, author_id, views, helpful_votes) VALUES
-    ('990e8400-e29b-41d4-a716-446655440000', 'How to Reset Password', 'Step-by-step guide to reset your password...', 'Authentication', ARRAY['password', 'login', 'security'], '550e8400-e29b-41d4-a716-446655440000', 45, 12),
-    ('990e8400-e29b-41d4-a716-446655440001', 'Creating Support Tickets', 'Learn how to create effective support tickets...', 'General', ARRAY['tickets', 'support', 'help'], '550e8400-e29b-41d4-a716-446655440000', 78, 23);
+    ('990e8400-e29b-41d4-a716-446655440000'::uuid, 'How to Reset Password', 'Step-by-step guide to reset your password...', 'Authentication', ARRAY['password', 'login', 'security'], '550e8400-e29b-41d4-a716-446655440000'::uuid, 45, 12),
+    ('990e8400-e29b-41d4-a716-446655440001'::uuid, 'Creating Support Tickets', 'Learn how to create effective support tickets...', 'General', ARRAY['tickets', 'support', 'help'], '550e8400-e29b-41d4-a716-446655440000'::uuid, 78, 23);
 INSERT INTO notifications (id, user_id, title, message, type, read, priority) VALUES
-    ('aa0e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', 'New Ticket Assigned', 'You have been assigned a new high-priority ticket', 'info', false, 'high'),
-    ('aa0e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440001', 'System Maintenance', 'Scheduled maintenance will occur tonight at 2 AM', 'warning', true, 'medium');
+    ('aa0e8400-e29b-41d4-a716-446655440000'::uuid, '550e8400-e29b-41d4-a716-446655440001'::uuid, 'New Ticket Assigned', 'You have been assigned a new high-priority ticket', 'info', false, 'high'),
+    ('aa0e8400-e29b-41d4-a716-446655440001'::uuid, '550e8400-e29b-41d4-a716-446655440001'::uuid, 'System Maintenance', 'Scheduled maintenance will occur tonight at 2 AM', 'warning', true, 'medium');
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN

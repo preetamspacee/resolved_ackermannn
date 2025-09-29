@@ -16,7 +16,7 @@ export default function Home() {
 export const getServerSideProps: GetServerSideProps = async () => {
   return {
     redirect: {
-      destination: '/admin/welcome',
+      destination: '/admin-dashboard',
       permanent: false,
     },
   };

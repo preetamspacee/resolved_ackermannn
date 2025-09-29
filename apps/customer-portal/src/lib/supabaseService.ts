@@ -49,9 +49,20 @@ export const customerTicketService = {
   },
 
   async createTicket(ticket: Omit<Ticket, 'id' | 'created_at' | 'updated_at'>): Promise<Ticket> {
+    // Add required sla_deadline field (7 days from now)
+    const slaDeadline = new Date();
+    slaDeadline.setDate(slaDeadline.getDate() + 7);
+    
+    const ticketData = {
+      ...ticket,
+      sla_deadline: slaDeadline.toISOString(),
+      channel: 'Portal',
+      sentiment: 'Neutral'
+    };
+    
     const { data, error } = await supabase
       .from('tickets')
-      .insert([ticket])
+      .insert([ticketData])
       .select()
       .single();
     
