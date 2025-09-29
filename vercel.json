@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/apps/admin-dashboard/out/index.html"
+    },
+    {
+      "src": "/admin/(.*)",
+      "dest": "/apps/admin-dashboard/$1"
+    },
+    {
+      "src": "/customer/(.*)",
+      "dest": "/apps/customer-portal/$1"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/apps/admin-dashboard/pages/api/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
