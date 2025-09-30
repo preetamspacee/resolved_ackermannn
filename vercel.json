@@ -19,10 +19,6 @@
       "dest": "/apps/admin-dashboard/$1"
     },
     {
-      "src": "/customer/(.*)",
-      "dest": "/apps/customer-portal/$1"
-    },
-    {
       "src": "/api/(.*)",
       "dest": "/apps/admin-dashboard/pages/api/$1"
     }

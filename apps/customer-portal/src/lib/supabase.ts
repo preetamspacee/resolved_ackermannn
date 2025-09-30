@@ -4,14 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Validate environment variables
-if (!supabaseUrl || !supabaseAnonKey) {
+// Validate environment variables - only throw error in browser, not during build
+if (typeof window !== 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
   throw new Error('Missing Supabase environment variables. Please check your .env.local file.');
 }
 
+// For Vercel build, provide fallback values if env vars are missing
+const finalSupabaseUrl = supabaseUrl || 'https://placeholder.supabase.co';
+const finalSupabaseAnonKey = supabaseAnonKey || 'placeholder-key';
+
 console.log('🚀 Connected to Supabase project:', supabaseUrl);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey);
 
 // Database types for BSM Platform
 export interface Database {

@@ -12,7 +12,7 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_URL
         value: https://zrxoiqhivfkgzvyoobki.supabase.co
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeG9pcWhpdmZrZ3p2eW9vYmtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUzMjQ4MDAsImV4cCI6MjA1MDkwMDgwMH0.YourAnonKeyHere
+        value: your_actual_supabase_anon_key_here
       - key: NEXT_PUBLIC_APP_URL
         value: https://bsm-admin-dashboard.onrender.com
     healthCheckPath: /welcome
@@ -31,9 +31,28 @@ services:
       - key: NEXT_PUBLIC_SUPABASE_URL
         value: https://zrxoiqhivfkgzvyoobki.supabase.co
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyeG9pcWhpdmZrZ3p2eW9vYmtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUzMjQ4MDAsImV4cCI6MjA1MDkwMDgwMH0.YourAnonKeyHere
+        value: your_actual_supabase_anon_key_here
       - key: NEXT_PUBLIC_APP_URL
         value: https://bsm-customer-portal.onrender.com
+    healthCheckPath: /
+    autoDeploy: true
+
+  # Customer Portal 3002 Service
+  - type: web
+    name: bsm-customer-portal-3002
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build:customer3002
+    startCommand: npm run start:customer3002
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://zrxoiqhivfkgzvyoobki.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: your_actual_supabase_anon_key_here
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://bsm-customer-portal-3002.onrender.com
     healthCheckPath: /
     autoDeploy: true
 

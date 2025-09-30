@@ -1,28 +1,11 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
-
 const nextConfig = {
-  reactStrictMode: true,
-  output: 'standalone',
   experimental: {
-    outputFileTracingRoot: path.join(__dirname),
+    outputFileTracingRoot: undefined,
   },
-  async rewrites() {
-    return [
-      {
-        source: '/welcome',
-        destination: '/apps/admin-dashboard/welcome',
-      },
-      {
-        source: '/admin/:path*',
-        destination: '/apps/admin-dashboard/:path*',
-      },
-      {
-        source: '/customer/:path*',
-        destination: '/apps/customer-portal/:path*',
-      },
-    ];
+  images: {
+    domains: ['localhost'],
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

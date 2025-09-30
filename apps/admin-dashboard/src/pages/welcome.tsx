@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -1661,4 +1662,5 @@ const WelcomePage = () => {
   );
 };
 
-export default WelcomePage;
+// Disable SSR to avoid hydration mismatches from client-only animations/icons
+export default dynamic(() => Promise.resolve(WelcomePage), { ssr: false });
