@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "turbo run dev --parallel --filter=@bsm/admin-dashboard --filter=@bsm/customer-portal",
+    "dev": "turbo run dev --parallel --filter=@bsm/customer-portal",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint"
