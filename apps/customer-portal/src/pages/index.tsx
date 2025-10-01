@@ -68,7 +68,7 @@ const Dashboard: React.FC = () => {
           // Then redirect to welcome page after refresh
           setTimeout(() => {
             console.log('🔍 Redirecting to welcome page after refresh');
-            window.location.href = 'http://localhost:3001/welcome';
+            window.location.href = '/welcome';
           }, 2000); // Redirect after 2 seconds
         }, 1000); // Refresh after 1 second
         
@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
           <button
             id="auto-redirect-btn"
             onClick={() => {
-              window.location.href = 'http://localhost:3001/welcome';
+              window.location.href = '/welcome';
             }}
             className="hidden"
             style={{ display: 'none' }}

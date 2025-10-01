@@ -21,8 +21,8 @@ function AppContent({ Component, pageProps }: AppProps) {
       const publicPages = ['/login', '/', '/help', '/services', '/tickets', '/ratings', '/profile', '/account', '/knowledge', '/settings']
       if (!publicPages.includes(router.pathname)) {
         console.log('🔍 _app.tsx: Redirecting unauthenticated user to login');
-        // Redirect to admin dashboard login
-        window.location.href = 'http://localhost:3001/login'
+        // Redirect to local login page (no localhost host hardcoding)
+        window.location.href = '/login'
       }
     }
   }, [isAuthenticated, isLoading, router.pathname])

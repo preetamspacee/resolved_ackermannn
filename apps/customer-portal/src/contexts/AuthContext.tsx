@@ -156,8 +156,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('bsm_user');
     localStorage.removeItem('token');
     localStorage.removeItem('authMethod');
-    // Redirect to login page
-    window.location.href = 'http://localhost:3001/login';
+    // Redirect to local login page (no hardcoded host)
+    window.location.href = '/login';
   };
 
   const updateUser = (userData: Partial<User>) => {
