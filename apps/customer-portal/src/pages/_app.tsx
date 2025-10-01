@@ -15,17 +15,9 @@ function AppContent({ Component, pageProps }: AppProps) {
   }, [])
 
   useEffect(() => {
-    console.log('🔍 _app.tsx: Auth state check - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'pathname:', router.pathname);
-    
-    if (!isLoading && !isAuthenticated) {
-      const publicPages = ['/login', '/', '/help', '/services', '/tickets', '/ratings', '/profile', '/account', '/knowledge', '/settings']
-      if (!publicPages.includes(router.pathname)) {
-        console.log('🔍 _app.tsx: Redirecting unauthenticated user to login');
-        // Redirect to local login page (no localhost host hardcoding)
-        window.location.href = '/login'
-      }
-    }
-  }, [isAuthenticated, isLoading, router.pathname])
+    // Restore previous behavior: no global auth redirect; allow anonymous access
+    console.log('🔍 _app.tsx: allow anonymous navigation on', router.pathname);
+  }, [router.pathname])
 
   if (!isClient || isLoading) {
     return (
